@@ -10,7 +10,9 @@
 |---|---|
 | `songs/NN-id.js` | 1曲 = 1ファイル。楽譜・音色・解説をすべて持つ |
 | `site/template.html` | サイト本体（曲の一覧、プレイヤー、共通の音の土台 `kit`） |
-| `samples/<楽器>/<音名>.mp3` | 生楽器の録音サンプル（`As3.mp3` = A#3）。出典とライセンスは `samples/CREDITS.md`（CC BY 3.0） |
+| `samples/<楽器>/<音名>.mp3` | 生楽器の録音サンプル（`As3.mp3` = A#3）。出典とライセンスは `samples/CREDITS.md` |
+| `samples/tr808/`, `samples/voice/` | 名前で呼ぶサンプル（`bd-long.wav` など。WAV も可）。`kit.hits()` で使う |
+| `tools/make-voice.mjs` | 合成した声（`samples/voice/`）を作り直すスクリプト。meSpeak を一時的に入れて実行する（先頭のコメント参照） |
 | `build.mjs` | `songs/*.js` を番号順に集めて `dist/index.html` を作る。`samples/` の一覧を埋め込み、`dist/samples/` にコピーする |
 | `test.mjs` | Tone.js のダミーで全曲を最後まで空実行し、エラーを探す |
 | `dist/index.html` | 公開するファイル（生成物。直接編集しない） |
@@ -38,6 +40,7 @@
   - `channel` は既定でモノラルにまとめる（Tone.Channel の仕様）。左右に振り分けた音を通すときは `{ stereo: true }` を付ける（No.07 から）
 - `at(time, fn)`（Transport に予約）, `flash(part, time)`（ミキサーのランプ）, `human(sec)`, `m(音名)→MIDI`, `f(MIDI)→音名`
 - `sampler(楽器名, opts)` 録音サンプルの `Tone.Sampler`（楽器名は `samples/` のフォルダ名。再生前に読み込みを待つ）
+- `hits(フォルダ名, {reverse})` 名前で呼ぶサンプル（TR-808 のドラム、合成した声）を `{ 名前: バッファ }` で返す。知らない名前はエラー（例: No.08）
 - `buffers(楽器名, {reverse})` 録音をそのまま素材として使うためのバッファ一式。`pick(midi)` で最も近い録音と、その音にするための再生速度 `rate` を返す。切り刻み・逆再生・引き伸ばしに使う（例: No.07 の `play()` / `slice()` / `swell()` / `grain()`）
   - コールバックの中でノードを作るときは `context: 出力先.context` を渡す
   - 注意: `Tone.Offline` で書き出すと、コールバックの中で作った BufferSource（切り刻んだサンプル）が鳴らない。音量の確認は実際の再生（`Tone.Meter`）で行う

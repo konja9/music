@@ -238,6 +238,13 @@ function makeKit(song, transport, hitCb) {
       if (!SAMPLES[inst]) throw new Error(`サンプル "${inst}" がありません（samples/ のフォルダ名）`);
       return new Tone.Sampler({ urls: SAMPLES[inst], baseUrl: `samples/${inst}/`, release: 0.3, ...opts });
     },
+    // named one-shots (drum hits, voice): { name: ToneAudioBuffer }, loaded before playback
+    hits(inst, { reverse = false } = {}) {
+      if (!SAMPLE_SETS[inst]) throw new Error(`名前つきサンプル "${inst}" がありません（samples/ のフォルダ名）`);
+      const out = {};
+      for (const [name, file] of Object.entries(SAMPLE_SETS[inst])) out[name] = new Tone.ToneAudioBuffer({ url: `samples/${inst}/${file}`, reverse });
+      return new Proxy(out, { get: (o, k) => { if (typeof k === "string" && !(k in o) && k !== "then" && k !== "toJSON") throw new Error(`"${inst}" に "${k}" がありません`); return o[k]; } });
+    },
     // raw sample buffers for chopping / reversing; pick(midi) -> nearest sample + playbackRate to reach midi
     buffers(inst, { reverse = false } = {}) {
       if (!SAMPLES[inst]) throw new Error(`サンプル "${inst}" がありません（samples/ のフォルダ名）`);
