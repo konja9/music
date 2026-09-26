@@ -39,7 +39,8 @@
 - `at(time, fn)`（Transport に予約）, `flash(part, time)`（ミキサーのランプ）, `human(sec)`, `m(音名)→MIDI`, `f(MIDI)→音名`
 - `sampler(楽器名, opts)` 録音サンプルの `Tone.Sampler`（楽器名は `samples/` のフォルダ名。再生前に読み込みを待つ）
 - `buffers(楽器名, {reverse})` 録音をそのまま素材として使うためのバッファ一式。`pick(midi)` で最も近い録音と、その音にするための再生速度 `rate` を返す。切り刻み・逆再生・引き伸ばしに使う（例: No.07 の `play()` / `slice()` / `swell()` / `grain()`）
-  - コールバックの中でノードを作るときは `context: 出力先.context` を渡す（`Tone.Offline` で書き出して確かめるときにも壊れない）
+  - コールバックの中でノードを作るときは `context: 出力先.context` を渡す
+  - 注意: `Tone.Offline` で書き出すと、コールバックの中で作った BufferSource（切り刻んだサンプル）が鳴らない。音量の確認は実際の再生（`Tone.Meter`）で行う
 - `build()` は `{ releaseAll() }` を返す（一時停止・頭出し時に鳴っている音を止める）
 
 注意: 音の状態（フィルタやエフェクト量）は小節の頭ごとに設定し直すこと。区間ジャンプしても正しい状態になるようにするためです。
