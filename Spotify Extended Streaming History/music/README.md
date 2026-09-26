@@ -1,5 +1,7 @@
 # 履歴盤 — Spotify の再生履歴から作ったオリジナル曲
 
+音はブラウザ内で Tone.js で鳴らします。ほとんどはシンセサイザーで、生楽器（ブラス、サックス、ギター、ベース）は `samples/` の録音サンプルを使えます（No.06 から）。
+
 公開サイト（非公開の Artifact）: https://claude.ai/artifact/5uTy27eZjMLx2i6Y1AehtP
 
 ## 構成
@@ -8,9 +10,11 @@
 |---|---|
 | `songs/NN-id.js` | 1曲 = 1ファイル。楽譜・音色・解説をすべて持つ |
 | `site/template.html` | サイト本体（曲の一覧、プレイヤー、共通の音の土台 `kit`） |
-| `build.mjs` | `songs/*.js` を番号順に集めて `dist/index.html` を作る |
+| `samples/<楽器>/<音名>.mp3` | 生楽器の録音サンプル（`As3.mp3` = A#3）。出典とライセンスは `samples/CREDITS.md`（CC BY 3.0） |
+| `build.mjs` | `songs/*.js` を番号順に集めて `dist/index.html` を作る。`samples/` の一覧を埋め込み、`dist/samples/` にコピーする |
 | `test.mjs` | Tone.js のダミーで全曲を最後まで空実行し、エラーを探す |
 | `dist/index.html` | 公開するファイル（生成物。直接編集しない） |
+| `dist/samples/` | 公開時に一緒に載せるサンプル（生成物。git には入れない） |
 | `listening-summary.json` | 再生履歴の集計（アーティスト別の再生時間など。IPアドレスは含まない） |
 | `tools/aggregate.mjs` | 元の履歴 JSON から `listening-summary.json` を作り直す |
 
@@ -21,7 +25,7 @@
    ```
    node music/build.mjs && node music/test.mjs
    ```
-3. 全曲 OK なら、`music/dist/index.html` を上記 URL の Artifact に公開し直す。
+3. 全曲 OK なら、`music/dist/index.html` を上記 URL の Artifact に公開し直す。`dist/samples/` の mp3 も `files` で一緒に載せる（公開先のパスは `samples/<楽器>/<音名>.mp3`。変わっていなければ載せ直さなくても残る）。
 
 曲ファイルの必須項目は `build.mjs` が確認します:
 `id`（英数字と - _）, `no`, `title`, `date`, `bpm`, `key`, `genre`, `blurb`, `accent: {light, dark}`,
@@ -32,6 +36,16 @@
 - `T(bar, step)` 16分単位の時刻（`swing` を反映）、`D(steps)` 長さ、`BAR`, `BARS`（各小節の `{sec, local, chord}`）
 - `channel(name, dB, {rev, dly})`, `bus(name, dB, ...effects)`, `master`, `shaper(levels)`（ビット削り）
 - `at(time, fn)`（Transport に予約）, `flash(part, time)`（ミキサーのランプ）, `human(sec)`, `m(音名)→MIDI`, `f(MIDI)→音名`
+- `sampler(楽器名, opts)` 録音サンプルの `Tone.Sampler`（楽器名は `samples/` のフォルダ名。再生前に読み込みを待つ）
 - `build()` は `{ releaseAll() }` を返す（一時停止・頭出し時に鳴っている音を止める）
 
 注意: 音の状態（フィルタやエフェクト量）は小節の頭ごとに設定し直すこと。区間ジャンプしても正しい状態になるようにするためです。
+
+## 録音サンプルを足す
+
+1. `samples/<楽器>/` に `<音名>.mp3`（シャープは `s`。例: `Fs3.mp3`）を置く。3半音おきくらいで十分（Sampler が近い音から補う）
+2. `samples/CREDITS.md` に出典とライセンスを書く
+3. 曲では `const x = kit.sampler("<楽器>")` として、ほかのシンセと同じように `triggerAttackRelease` で鳴らす
+4. `site/template.html` は変えなくてよい。build すれば一覧に入る
+
+注意: `Tone.Transport` / `Tone.Draw` は使わず `Tone.getTransport()` / `Tone.getDraw()` を使う（曲を切り替えるたびに Tone の Context を作り直すため、古い方を指したままになる）。

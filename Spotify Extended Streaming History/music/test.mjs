@@ -66,7 +66,7 @@ const Tone = new Proxy({
     toNote: () => { if (!Number.isInteger(n)) throw new Error("MIDI番号が整数ではありません: " + n); return NAMES[n % 12] + (Math.floor(n / 12) - 1); },
     toFrequency: () => 440,
   }),
-  Transport: transport, getDestination: () => any("dest"), getContext: () => any("ctx"), setContext() {}, start: async () => {},
+  Transport: transport, getTransport: () => transport, getDraw: () => ({ schedule() {} }), getDestination: () => any("dest"), getContext: () => any("ctx"), setContext() {}, start: async () => {},
   Draw: { schedule() {} }, Context: function () { return any("ctx"); },
 }, { get: (t, k) => (k in t ? t[k] : function () { return makeSynth(); }) });
 

@@ -110,6 +110,7 @@ h3 { font-family: var(--font-display); font-weight: 400; font-size: 22px; margin
 .tag b { font-family: var(--font-mono); font-weight: 500; margin-left: 4px; color: var(--ink-2); }
 @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
 .chart-sheet { overflow-x: auto; }
+svg[hidden] { display: none; }
 .sheet { font-family: var(--font-mono); font-size: 13px; border-collapse: collapse; min-width: 560px; width: 100%; }
 .sheet th { text-align: left; font-weight: 500; color: var(--ink-3); font-size: 12px; padding: 5px 10px 5px 0; white-space: nowrap; }
 .sheet td { padding: 5px 10px; border-left: 1px solid var(--line); white-space: nowrap; }
@@ -121,7 +122,7 @@ footer p { margin: 0; max-width: 76ch; }
 <div class="wrap">
   <header class="site-head">
     <h1>履歴盤</h1>
-    <p>Spotify の再生履歴（2016〜2026年、約1,290時間）をもとに作ったオリジナル曲の置き場です。音はすべてこのページの中のシンセサイザーで鳴らしています。</p>
+    <p>Spotify の再生履歴（2016〜2026年、約1,290時間）をもとに作ったオリジナル曲の置き場です。音はこのページの中で鳴らしています。ほとんどはシンセサイザーで、一部の生楽器は録音サンプルです。</p>
   </header>
 
   <div class="layout">
@@ -165,7 +166,7 @@ footer p { margin: 0; max-width: 76ch; }
         <div class="chart-sheet"><table class="sheet" id="sheet"></table></div>
       </section>
       <footer>
-        <p>既存曲のメロディやフレーズは使っていません。解説の時間は全期間の再生時間です。音源は Tone.js で合成しています。スマホで音が出ない場合は、マナーモード（消音スイッチ）を解除してください。</p>
+        <p>既存曲のメロディやフレーズは使っていません。解説の時間は全期間の再生時間です。音は Tone.js で合成しています。一部の生楽器（ブラス、サックス、ギター、ベース）は tonejs-instruments の録音サンプル（Nicholaus P. Brosowsky、CC BY 3.0）を使っています。スマホで音が出ない場合は、マナーモード（消音スイッチ）を解除してください。</p>
       </footer>
     </main>
   </div>
@@ -173,6 +174,7 @@ footer p { margin: 0; max-width: 76ch; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 <script>
+/*__SAMPLES__*/
 const SONGS = [];
 /*__SONGS__*/
 </script>
@@ -217,7 +219,7 @@ function makeKit(song, transport, hitCb) {
     f: midi => Tone.Frequency(midi, "midi").toNote(),
     at: (time, fn) => transport.schedule(fn, time),
     human: (amt = 0.005) => (Math.random() * 2 - 1) * amt,
-    flash: (part, time) => { const cb = hitCb[part]; if (cb) Tone.Draw.schedule(cb, time); },
+    flash: (part, time) => { const cb = hitCb[part]; if (cb) Tone.getDraw().schedule(cb, time); },
     channel(name, volume, sends = {}) {
       const c = new Tone.Channel({ volume }).connect(master);
       for (const [bus, db] of Object.entries(sends)) c.connect(new Tone.Gain(Tone.dbToGain(db)).connect(busIn(bus)));
@@ -230,6 +232,11 @@ function makeKit(song, transport, hitCb) {
       return c;
     },
     shaper: levels => new Tone.WaveShaper(x => Math.round(x * levels) / levels, 4096),
+    // recorded instrument from samples/<inst>/ (loaded before playback starts)
+    sampler(inst, opts = {}) {
+      if (!SAMPLES[inst]) throw new Error(`サンプル "${inst}" がありません（samples/ のフォルダ名）`);
+      return new Tone.Sampler({ urls: SAMPLES[inst], baseUrl: `samples/${inst}/`, release: 0.3, ...opts });
+    },
   };
 }
 
@@ -268,7 +275,7 @@ for (let i = 0; i < 16; i++) stepsEl.appendChild(document.createElement("i"));
 // ---------- select / render song page ----------
 async function select(id, autoplay) {
   const song = SONGS.find(s => s.id === id) || SONGS[SONGS.length - 1];
-  if (cur === song) { if (autoplay && !(G && Tone.Transport.state === "started")) toggle(); return; }
+  if (cur === song) { if (autoplay && !(G && Tone.getTransport().state === "started")) toggle(); return; }
   await teardown();
   cur = song;
   for (const k in muted) delete muted[k];
@@ -321,7 +328,7 @@ async function select(id, autoplay) {
 async function teardown() {
   if (!G && !starting) return;
   try { await starting; } catch {}
-  try { Tone.Transport.stop(); Tone.Transport.cancel(0); } catch {}
+  try { Tone.getTransport().stop(); Tone.getTransport().cancel(0); } catch {}
   const old = Tone.getContext();
   G = null; starting = null;
   Tone.setContext(new Tone.Context());
@@ -333,12 +340,13 @@ async function ensure() {
   if (G) return G;
   if (!starting) starting = (async () => {
     await Tone.start();
-    const tr = Tone.Transport;
+    const tr = Tone.getTransport();
     tr.cancel(0); tr.bpm.value = cur.bpm; tr.seconds = 0;
     const kit = makeKit(cur, tr, hitCb);
     const api = cur.build(tr, kit) || {};
+    await Tone.loaded();
     for (const [k] of cur.parts) if (kit.ch[k]) kit.ch[k].mute = !!muted[k];
-    tr.schedule(t => Tone.Draw.schedule(() => { tr.stop(); tr.seconds = 0; release(); }, t), kit.END);
+    tr.schedule(t => Tone.getDraw().schedule(() => { tr.stop(); tr.seconds = 0; release(); }, t), kit.END);
     G = { kit, api };
     return G;
   })();
@@ -353,7 +361,7 @@ async function toggle() {
     busy = true;
     if (!G) $("now-sec").textContent = "音源を準備しています…";
     await ensure();
-    const tr = Tone.Transport;
+    const tr = Tone.getTransport();
     if (tr.state === "started") { tr.pause(); release(); setPlaying(false); }
     else { tr.start("+0.05"); setPlaying(true); }
   } catch (e) { showErr(e); }
@@ -365,8 +373,8 @@ async function seek(sec, autoplay) {
     busy = true;
     await ensure();
     release();
-    Tone.Transport.seconds = sec;
-    if (autoplay && Tone.Transport.state !== "started") { Tone.Transport.start("+0.05"); setPlaying(true); }
+    Tone.getTransport().seconds = sec;
+    if (autoplay && Tone.getTransport().state !== "started") { Tone.getTransport().start("+0.05"); setPlaying(true); }
   } catch (e) { showErr(e); }
   finally { busy = false; lastKey = ""; }
 }
@@ -392,11 +400,11 @@ function drawScope(playing) {
 let lastKey = "", lastPlaying = false;
 function draw(force) {
   if (!cur) return;
-  const playing = !!G && Tone.Transport.state === "started";
+  const playing = !!G && Tone.getTransport().state === "started";
   if (playing !== lastPlaying && !busy) { lastPlaying = playing; setPlaying(playing); }
   SONGS.forEach(s => $("track-" + s.id).classList.toggle("playing", playing && s === cur));
   const { BAR, S, BARS, END } = cur.geo;
-  const sec = G ? Math.max(0, Tone.Transport.seconds) : 0;
+  const sec = G ? Math.max(0, Tone.getTransport().seconds) : 0;
   const barIdx = Math.min(BARS.length - 1, Math.floor(sec / BAR));
   const step = Math.floor((sec % BAR) / S);
   const b = BARS[barIdx];

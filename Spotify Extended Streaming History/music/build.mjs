@@ -1,4 +1,4 @@
-// Bundle every song in songs/*.js into one page: dist/index.html
+// Bundle every song in songs/*.js into one page: dist/index.html (+ dist/samples/)
 // Usage: node music/build.mjs
 import fs from "node:fs";
 import path from "node:path";
@@ -31,8 +31,31 @@ for (const f of files) {
   console.log(`  ${f}  No.${s.no}  ${s.title}  (${s.genre})`);
 }
 
+// sample instruments: samples/<inst>/<Note>.mp3 ("As3.mp3" = A#3) -> manifest + copy to dist/samples/
+const SAMPLE_DIR = path.join(ROOT, "samples");
+const samples = {};
+let sampleFiles = 0;
+fs.rmSync(path.join(OUT_DIR, "samples"), { recursive: true, force: true });
+for (const inst of fs.readdirSync(SAMPLE_DIR, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name).sort()) {
+  if (!/^[a-z0-9-]+$/.test(inst)) throw new Error(`samples/${inst}: フォルダ名は英小文字・数字・- のみ`);
+  const map = {};
+  for (const f of fs.readdirSync(path.join(SAMPLE_DIR, inst)).sort()) {
+    const mm = /^([A-G])(s?)(-?\d)\.mp3$/.exec(f);
+    if (!mm) throw new Error(`samples/${inst}/${f}: ファイル名は "As3.mp3" の形にしてください`);
+    map[mm[1] + (mm[2] ? "#" : "") + mm[3]] = f;
+    fs.mkdirSync(path.join(OUT_DIR, "samples", inst), { recursive: true });
+    fs.copyFileSync(path.join(SAMPLE_DIR, inst, f), path.join(OUT_DIR, "samples", inst, f));
+    sampleFiles++;
+  }
+  if (!Object.keys(map).length) throw new Error(`samples/${inst}: mp3 がありません`);
+  samples[inst] = map;
+}
+
 const template = fs.readFileSync(path.join(ROOT, "site", "template.html"), "utf8");
-const html = template.replace("/*__SONGS__*/", () => bundle.join("\n").replace(/<\/script/gi, "<\\/script"));
+const html = template
+  .replace("/*__SAMPLES__*/", () => `const SAMPLES = ${JSON.stringify(samples)};`)
+  .replace("/*__SONGS__*/", () => bundle.join("\n").replace(/<\/script/gi, "<\\/script"));
 fs.mkdirSync(OUT_DIR, { recursive: true });
 fs.writeFileSync(path.join(OUT_DIR, "index.html"), html);
 console.log(`dist/index.html: ${files.length}曲, ${Math.round(html.length / 1024)}KB`);
+console.log(`dist/samples/: ${Object.keys(samples).length}楽器, ${sampleFiles}ファイル（index.html と一緒に公開する）`);
