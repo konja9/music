@@ -22,6 +22,7 @@
 | `cello/` | tonejs-instrument-cello-mp3 |
 | `contrabass/` | tonejs-instrument-contrabass-mp3 |
 | `organ/` | tonejs-instrument-organ-mp3 |
+| `flute/` | tonejs-instrument-flute-mp3 |
 
 ファイル名の `s` はシャープです（`As3.mp3` = A#3）。
 
