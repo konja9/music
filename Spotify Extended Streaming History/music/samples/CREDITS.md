@@ -15,5 +15,6 @@
 | `saxophone/` | tonejs-instrument-saxophone-mp3 |
 | `guitar-electric/` | tonejs-instrument-guitar-electric-mp3 |
 | `bass-electric/` | tonejs-instrument-bass-electric-mp3 |
+| `piano/` | tonejs-instrument-piano-mp3 |
 
 ファイル名の `s` はシャープです（`As3.mp3` = A#3）。

@@ -220,8 +220,9 @@ function makeKit(song, transport, hitCb) {
     at: (time, fn) => transport.schedule(fn, time),
     human: (amt = 0.005) => (Math.random() * 2 - 1) * amt,
     flash: (part, time) => { const cb = hitCb[part]; if (cb) Tone.getDraw().schedule(cb, time); },
-    channel(name, volume, sends = {}) {
-      const c = new Tone.Channel({ volume }).connect(master);
+    // stereo: keep the input in stereo (Tone.Channel downmixes to mono by default)
+    channel(name, volume, sends = {}, { stereo = false } = {}) {
+      const c = new Tone.Channel({ volume, channelCount: stereo ? 2 : 1 }).connect(master);
       for (const [bus, db] of Object.entries(sends)) c.connect(new Tone.Gain(Tone.dbToGain(db)).connect(busIn(bus)));
       return (ch[name] = c);
     },
@@ -236,6 +237,20 @@ function makeKit(song, transport, hitCb) {
     sampler(inst, opts = {}) {
       if (!SAMPLES[inst]) throw new Error(`サンプル "${inst}" がありません（samples/ のフォルダ名）`);
       return new Tone.Sampler({ urls: SAMPLES[inst], baseUrl: `samples/${inst}/`, release: 0.3, ...opts });
+    },
+    // raw sample buffers for chopping / reversing; pick(midi) -> nearest sample + playbackRate to reach midi
+    buffers(inst, { reverse = false } = {}) {
+      if (!SAMPLES[inst]) throw new Error(`サンプル "${inst}" がありません（samples/ のフォルダ名）`);
+      const list = Object.entries(SAMPLES[inst])
+        .map(([note, file]) => ({ midi: Tone.Frequency(note).toMidi(), buf: new Tone.ToneAudioBuffer({ url: `samples/${inst}/${file}`, reverse }) }))
+        .sort((a, b) => a.midi - b.midi);
+      return {
+        list,
+        pick(midi) {
+          const s = list.reduce((best, x) => (Math.abs(x.midi - midi) < Math.abs(best.midi - midi) ? x : best));
+          return { buf: s.buf, rate: 2 ** ((midi - s.midi) / 12) };
+        },
+      };
     },
   };
 }

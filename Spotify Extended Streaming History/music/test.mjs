@@ -48,6 +48,7 @@ function makeSynth() {
   return new Proxy({}, {
     get(t, k) {
       if (k === "triggerAttackRelease" || k === "triggerAttack") return trig;
+      if (k === "start" || k === "stop") return (...args) => { for (const x of args) if (typeof x === "number" && !isFinite(x)) throw new Error(k + " の引数が不正: " + x); if (k === "start") stats.notes++; return t; };
       if (k === "then") return undefined;
       if (k in t) return t[k];
       return any(String(k));
