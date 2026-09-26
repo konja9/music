@@ -1,0 +1,1967 @@
+<title>履歴盤</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+JP:wght@400;500;700&display=swap">
+<style>
+:root {
+  --bg: #ecebe8;
+  --surface: #f7f6f4;
+  --surface-2: #dfddd8;
+  --line: #cfccc5;
+  --ink: #17161a;
+  --ink-2: #48464e;
+  --ink-3: #75727c;
+  --acc-l: #d98a1e; --acc-d: #f0a640;
+  --accent: var(--acc-l);
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  --on-accent: #ffffff;
+  --scope-bg: #17161a;
+  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-body: "IBM Plex Sans JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #111013; --surface: #1a191d; --surface-2: #242328; --line: #333138;
+    --ink: #f1eff4; --ink-2: #bab7c2; --ink-3: #87848f;
+    --accent: var(--acc-d); --on-accent: #111013; --scope-bg: #0a090b;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111013; --surface: #1a191d; --surface-2: #242328; --line: #333138;
+  --ink: #f1eff4; --ink-2: #bab7c2; --ink-3: #87848f;
+  --accent: var(--acc-d); --on-accent: #111013; --scope-bg: #0a090b;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.65; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 36px 20px 72px; display: grid; gap: 28px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.site-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
+.site-head h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(34px, 6vw, 52px); margin: 0; line-height: 1.1; }
+.site-head p { margin: 0; color: var(--ink-2); max-width: 52ch; font-size: 14px; }
+
+.layout { display: grid; grid-template-columns: minmax(250px, 320px) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+
+.tracks { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+@media (max-width: 860px) { .tracks { position: static; } }
+.tracks-head { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-3); padding: 0 10px 6px; font-family: var(--font-mono); }
+.track { width: 100%; font: inherit; text-align: left; border: 0; background: none; color: var(--ink); cursor: pointer; display: grid; grid-template-columns: 2.2em minmax(0, 1fr) auto; gap: 0 10px; align-items: center; padding: 10px; border-radius: 8px; }
+.track:hover { background: var(--surface-2); }
+.track[aria-current="true"] { background: var(--surface); box-shadow: inset 3px 0 0 var(--tc); }
+.track .no { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }
+.track .t { font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.track .g { grid-column: 2; font-size: 12px; color: var(--ink-3); }
+.track .len { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); grid-row: 1; grid-column: 3; }
+.track .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--tc); display: inline-block; margin-right: 6px; vertical-align: 1px; }
+.track.playing .len::before { content: "♪ "; color: var(--tc); }
+
+.main { display: grid; gap: 28px; min-width: 0; }
+.hero { display: grid; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; color: var(--ink-3); text-transform: uppercase; }
+.hero h2 { font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 8vw, 72px); line-height: 1.05; margin: 0; text-wrap: balance; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-family: var(--font-mono); font-size: 13px; color: var(--ink-2); }
+.lede { margin: 2px 0 0; color: var(--ink-2); max-width: 62ch; }
+
+.player { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 16px; }
+.scope { width: 100%; height: 96px; display: block; background: var(--scope-bg); border-radius: 6px; }
+.transport { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.play { width: 60px; height: 60px; border-radius: 50%; border: 0; background: var(--accent); color: var(--on-accent); cursor: pointer; display: grid; place-items: center; flex: none; }
+.play svg { width: 24px; height: 24px; fill: currentColor; }
+.play:hover { filter: brightness(1.07); }
+.btn { font: inherit; font-size: 13px; background: none; border: 1px solid var(--line); color: var(--ink-2); padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+.btn:hover { border-color: var(--accent); color: var(--ink); }
+.now { display: grid; min-width: 0; flex: 1 1 180px; }
+.now .sec { font-size: 12px; color: var(--ink-3); letter-spacing: .05em; }
+.now .chord { font-family: var(--font-display); font-size: clamp(26px, 5vw, 36px); line-height: 1.2; overflow-wrap: anywhere; }
+.clock { font-family: var(--font-mono); font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.steps { display: grid; grid-template-columns: repeat(16, 1fr); gap: 4px; }
+.steps i { height: 6px; border-radius: 2px; background: var(--surface-2); }
+.steps i:nth-child(4n+1) { background: var(--line); }
+.steps i.on { background: var(--accent); }
+.timeline { display: flex; gap: 3px; height: 42px; }
+.seg { position: relative; border: 0; padding: 0 8px; border-radius: 6px; cursor: pointer; font: inherit; font-size: 12px; text-align: left; color: var(--ink); background: var(--surface-2); overflow: hidden; min-width: 0; }
+.seg::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--accent); opacity: var(--o, .5); }
+.seg span { position: relative; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg.cur { background: var(--accent-soft); font-weight: 500; }
+.seg .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); opacity: .16; width: 0; pointer-events: none; }
+.note { font-size: 12px; color: var(--ink-3); margin: -6px 0 0; }
+.mixer { display: flex; flex-wrap: wrap; gap: 8px; }
+.part { font: inherit; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 5px 12px 5px 8px; cursor: pointer; }
+.part .led { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); transition: transform .08s; }
+.part[aria-pressed="false"] { color: var(--ink-3); }
+.part[aria-pressed="false"] .led { background: var(--surface-2); }
+.part.hit .led { transform: scale(1.5); }
+.err { color: #c0392b; font-size: 13px; margin: 0; }
+
+h3 { font-family: var(--font-display); font-weight: 400; font-size: 22px; margin: 0; }
+.block { display: grid; gap: 12px; }
+.rows { display: grid; border-top: 1px solid var(--line); }
+.row { display: grid; grid-template-columns: 9em minmax(0, 1fr) minmax(0, 14em); gap: 6px 18px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.row .what { font-weight: 700; }
+.row .what small { display: block; font-weight: 400; font-size: 12px; color: var(--ink-3); font-family: var(--font-mono); }
+.row .how { color: var(--ink-2); }
+.row .src { display: flex; flex-wrap: wrap; gap: 4px 6px; align-content: start; }
+.tag { font-size: 12px; border-radius: 4px; padding: 1px 7px; background: var(--surface-2); white-space: nowrap; }
+.tag b { font-family: var(--font-mono); font-weight: 500; margin-left: 4px; color: var(--ink-2); }
+@media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
+.chart-sheet { overflow-x: auto; }
+.sheet { font-family: var(--font-mono); font-size: 13px; border-collapse: collapse; min-width: 560px; width: 100%; }
+.sheet th { text-align: left; font-weight: 500; color: var(--ink-3); font-size: 12px; padding: 5px 10px 5px 0; white-space: nowrap; }
+.sheet td { padding: 5px 10px; border-left: 1px solid var(--line); white-space: nowrap; }
+footer { font-size: 12px; color: var(--ink-3); }
+footer p { margin: 0; max-width: 76ch; }
+@media (prefers-reduced-motion: reduce) { .part .led { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="site-head">
+    <h1>履歴盤</h1>
+    <p>Spotify の再生履歴（2016〜2026年、約1,290時間）をもとに作ったオリジナル曲の置き場です。音はすべてこのページの中のシンセサイザーで鳴らしています。</p>
+  </header>
+
+  <div class="layout">
+    <nav aria-label="曲の一覧">
+      <div class="tracks-head"><span id="count"></span><span>長さ</span></div>
+      <ol class="tracks" id="tracks"></ol>
+    </nav>
+
+    <main class="main">
+      <section class="hero">
+        <div class="eyebrow" id="eyebrow"></div>
+        <h2 id="title"></h2>
+        <div class="meta" id="meta"></div>
+        <p class="lede" id="blurb"></p>
+      </section>
+
+      <section class="player" aria-label="プレイヤー">
+        <canvas class="scope" id="scope" aria-hidden="true"></canvas>
+        <div class="transport">
+          <button class="play" id="play" type="button" aria-label="再生">
+            <svg id="icon-play" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg>
+            <svg id="icon-pause" viewBox="0 0 24 24" hidden><path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z"/></svg>
+          </button>
+          <div class="now"><span class="sec" id="now-sec"></span><span class="chord" id="now-chord"></span></div>
+          <span class="clock" id="clock"></span>
+          <button class="btn" id="rewind" type="button">最初から</button>
+        </div>
+        <div class="steps" id="steps" aria-hidden="true"></div>
+        <div class="timeline" id="timeline"></div>
+        <p class="note">区間を押すとそこから再生します。</p>
+        <div class="mixer" id="mixer"></div>
+        <p class="err" id="err" hidden></p>
+      </section>
+
+      <section class="block">
+        <h3>この曲に入れたもの</h3>
+        <div class="rows" id="why"></div>
+      </section>
+      <section class="block">
+        <h3>コード譜</h3>
+        <div class="chart-sheet"><table class="sheet" id="sheet"></table></div>
+      </section>
+      <footer>
+        <p>既存曲のメロディやフレーズは使っていません。解説の時間は全期間の再生時間です。音源は Tone.js で合成しています。スマホで音が出ない場合は、マナーモード（消音スイッチ）を解除してください。</p>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+<script>
+const SONGS = [];
+// ===== 01-17ji-no-signal.js =====
+// No.1 17時のシグナル
+(() => {
+const C = {
+  Gbmaj9:  { sym: "G♭maj9",     root: 30, v: ["Bb3", "Db4", "F4", "Ab4"] },
+  Fm9:     { sym: "Fm9",        root: 29, v: ["Ab3", "C4", "Eb4", "G4"] },
+  Ebm9:    { sym: "E♭m9",       root: 27, v: ["Gb3", "Bb3", "Db4", "F4"] },
+  Ab13:    { sym: "A♭13",       root: 32, v: ["Gb3", "C4", "F4", "Bb4"] },
+  F7s9:    { sym: "F7(♯9)",     root: 29, v: ["A3", "Eb4", "Ab4"] },
+  Bbm9:    { sym: "B♭m9",       root: 34, v: ["Ab3", "C4", "Db4", "F4"] },
+  Absus:   { sym: "A♭9sus4",    root: 32, v: ["Gb3", "Bb3", "Db4", "F4"] },
+  Gbm7s11: { sym: "G♭maj7(♯11)", root: 30, v: ["Bb3", "C4", "Db4", "F4"] },
+  F7alt:   { sym: "F7(♯9♭13)",  root: 29, v: ["A3", "Db4", "Eb4", "Ab4"] },
+  Dbmaj9:  { sym: "D♭maj9",     root: 37, v: ["C4", "Eb4", "F4", "Ab4"] },
+  Bbm:     { sym: "B♭m",        root: 34, v: ["F3", "Bb3", "Db4"] },
+  BbmA:    { sym: "B♭m/A",      root: 33, v: ["F3", "Bb3", "Db4"] },
+  BbmAb:   { sym: "B♭m/A♭",     root: 32, v: ["F3", "Bb3", "Db4"] },
+  Ghd:     { sym: "Gm7(♭5)",    root: 31, v: ["F3", "Bb3", "Db4"] },
+  Gbmaj7:  { sym: "G♭maj7",     root: 30, v: ["F3", "Bb3", "Db4"] },
+  F7:      { sym: "F7",         root: 29, v: ["A3", "C4", "Eb4"] },
+  Fsus:    { sym: "F7sus4",     root: 29, v: ["Bb3", "C4", "Eb4"] },
+  F7b9:    { sym: "F7(♭9)",     root: 29, v: ["A3", "Eb4", "Gb4"] },
+};
+const A8 = ["Gbmaj9", "Fm9", "Ebm9", "Ab13", "Gbmaj9", "F7s9", "Bbm9", "Absus"];
+const SECTIONS = [
+  { id: "intro",  name: "イントロ", bars: 8,  chords: A8 },
+  { id: "a",      name: "A",       bars: 16, chords: [...A8, ...A8] },
+  { id: "b",      name: "B",       bars: 8,  chords: ["Bbm9", "Bbm9", "Gbm7s11", "Gbm7s11", "Ebm9", "Ebm9", "F7alt", "F7alt"] },
+  { id: "bridge", name: "ブリッジ", bars: 8,  chords: ["Bbm", "BbmA", "BbmAb", "Ghd", "Gbmaj7", "F7", "Fsus", "F7b9"] },
+  { id: "a2",     name: "A'",      bars: 16, chords: [...A8, ...A8] },
+  { id: "outro",  name: "アウトロ", bars: 4,  chords: ["Gbmaj9", "Fm9", "Ebm9", "Dbmaj9"] },
+];
+
+// lead melody: [step, note, durSteps] per bar of the 8-bar A phrase (original)
+const MEL_A = [
+  [[2, "Db5", 2], [4, "Eb5", 2], [6, "F5", 6], [13, "Eb5", 1], [14, "Db5", 2]],
+  [[0, "C5", 4], [6, "Ab4", 2], [8, "C5", 2], [10, "Eb5", 6]],
+  [[2, "F5", 2], [4, "Gb5", 2], [6, "F5", 2], [8, "Eb5", 2], [10, "Db5", 4]],
+  [[0, "C5", 6], [8, "Bb4", 2], [10, "Ab4", 2], [12, "F4", 4]],
+  [[2, "Db5", 2], [4, "Eb5", 2], [6, "F5", 4], [10, "Ab5", 2], [12, "Bb5", 4]],
+  [[0, "Ab5", 4], [4, "F5", 2], [6, "Eb5", 2], [8, "C5", 4], [12, "A4", 4]],
+  [[0, "Bb4", 2], [2, "C5", 2], [4, "Db5", 4], [8, "F5", 2], [10, "Eb5", 2], [12, "Db5", 2], [14, "C5", 2]],
+  [[0, "Db5", 8], [12, "Eb5", 4]],
+];
+const MEL_A_END = [[0, "Db5", 4], [4, "Eb5", 2], [6, "F5", 2], [8, "Ab5", 2], [10, "Bb5", 2], [12, "C6", 4]];
+const MEL_A2_END = [[0, "F5", 16]];
+const MEL_B = { 1: [[0, "F4", 4], [4, "Ab4", 4], [8, "Db5", 8]], 3: [[0, "C5", 6], [8, "Bb4", 8]], 5: [[0, "Gb4", 4], [4, "Bb4", 4], [8, "F5", 8]], 7: [[0, "Eb5", 4], [4, "Db5", 4], [8, "A4", 8]] };
+const DB_SCALE = new Set([1, 3, 5, 6, 8, 10, 0]);
+
+SONGS.push({
+  file: "01-17ji-no-signal.js",
+  id: "17ji-no-signal",
+  no: 1,
+  title: "17時のシグナル",
+  date: "2026-09-26",
+  bpm: 96,
+  swing: 0.22,
+  key: "D♭ メジャー",
+  genre: "ネオソウル",
+  tail: 5,
+  masterGain: 0.8,
+  comp: {
+    "threshold": -20,
+    "ratio": 3,
+    "attack": 0.01,
+    "release": 0.2
+  },
+  accent: {
+    "light": "#c47a12",
+    "dark": "#f0a640"
+  },
+  blurb: "再生がいちばん多い時間帯は17時台でした。夕方に流すことを想定して、履歴の上位の人たちの要素を混ぜた最初の曲です。ブリッジだけインダストリアルに振っていて、次の「断線」はそこから生まれました。",
+  parts: [
+    [
+      "keys",
+      "エレピ・ピアノ"
+    ],
+    [
+      "bass",
+      "ベース"
+    ],
+    [
+      "drums",
+      "ドラム"
+    ],
+    [
+      "lead",
+      "リード"
+    ],
+    [
+      "pad",
+      "パッド"
+    ]
+  ],
+  why: [
+    [
+      "コードの響き",
+      "maj9・m9・13th",
+      "ポップスの形はそのままに、テンションを多めに入れたコードで進みます。Aは G♭maj9 → Fm9 → E♭m9 → A♭13 の4小節です。",
+      [
+        [
+          "星野源",
+          63
+        ],
+        [
+          "Bialystocks",
+          14
+        ],
+        [
+          "KIRINJI",
+          7
+        ],
+        [
+          "藤井風",
+          13
+        ]
+      ]
+    ],
+    [
+      "エレピとリード",
+      "Rhodes / Moog 風",
+      "揺れのあるエレピでコードを刻み、リードは音程をすべらせながら歌うように動かしています。",
+      [
+        [
+          "Stevie Wonder",
+          16
+        ],
+        [
+          "Jamiroquai",
+          6
+        ],
+        [
+          "Marvin Gaye",
+          7
+        ]
+      ]
+    ],
+    [
+      "ベース",
+      "フィル多め",
+      "次のコードへ半音で寄せたり、8小節ごとに下降するフレーズを入れたりしています。",
+      [
+        [
+          "Thundercat",
+          7
+        ],
+        [
+          "Vulfpeck",
+          13
+        ],
+        [
+          "Robert Glasper",
+          9
+        ]
+      ]
+    ],
+    [
+      "ドラムのノリ",
+      "16分に22%のスウィング",
+      "裏の16分を少し後ろにずらし、叩くタイミングもわずかにばらつかせています。Bはハーフタイムです。",
+      [
+        [
+          "Kendrick Lamar",
+          33
+        ],
+        [
+          "Tyler, The Creator",
+          20
+        ],
+        [
+          "A Tribe Called Quest",
+          7
+        ]
+      ]
+    ],
+    [
+      "ブリッジの歪み",
+      "ビット削り＋ディストーション",
+      "上の和音を固定してベースだけ半音ずつ下げ、ドラムとパッドを荒らしています。",
+      [
+        [
+          "Nine Inch Nails",
+          40
+        ],
+        [
+          "JPEGMAFIA",
+          23
+        ],
+        [
+          "Radiohead",
+          10
+        ]
+      ]
+    ],
+    [
+      "ピアノの合いの手",
+      "A'の偶数小節",
+      "2小節ごとに、コードの音を上から下りる短いフレーズを入れています。",
+      [
+        [
+          "Enrico Pieranunzi",
+          12
+        ],
+        [
+          "Ahmad Jamal Trio",
+          8
+        ]
+      ]
+    ]
+  ],
+  chords: C,
+  sections: SECTIONS,
+  build(transport, kit) {
+    const { T, D, m, f, BAR, BARS, at, flash, human } = kit;
+    const master = kit.master;
+    const reverb = new Tone.Reverb({ decay: 3.2, preDelay: 0.02, wet: 1 });
+    kit.bus("rev", -6, reverb);
+    const delay = new Tone.FeedbackDelay({ delayTime: "8n.", feedback: 0.3, wet: 1 });
+    kit.bus("dly", -14, new Tone.Filter(2500, "lowpass"), delay);
+    const ch = kit.ch;
+    kit.channel("keys", -9, { rev: -10 }); kit.channel("bass", -8); kit.channel("drums", -6, { rev: -22 }); kit.channel("lead", -13, { rev: -12, dly: -8 }); kit.channel("pad", -15, { rev: -8 });
+
+    // Rhodes-like EP
+    const epFilter = new Tone.Filter(6000, "lowpass");
+    const trem = new Tone.Tremolo({ frequency: 4.2, depth: 0.35, spread: 120 }).start();
+    const chorus = new Tone.Chorus({ frequency: 0.6, delayTime: 3.5, depth: 0.5, wet: 0.35 }).start();
+    const ep = new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 1, modulationIndex: 3.2,
+      oscillator: { type: "sine" }, modulation: { type: "sine" },
+      envelope: { attack: 0.004, decay: 1.6, sustain: 0.28, release: 1.1 },
+      modulationEnvelope: { attack: 0.002, decay: 0.35, sustain: 0.12, release: 0.6 },
+    });
+    ep.maxPolyphony = 24;
+    ep.chain(epFilter, trem, chorus, ch.keys);
+
+    // jazz piano fills
+    const piano = new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 2, modulationIndex: 1.4,
+      oscillator: { type: "triangle" }, modulation: { type: "sine" },
+      envelope: { attack: 0.002, decay: 0.9, sustain: 0.05, release: 0.6 },
+      modulationEnvelope: { attack: 0.002, decay: 0.2, sustain: 0, release: 0.2 },
+      volume: -6,
+    }).connect(ch.keys);
+
+    // bass
+    const bassDist = new Tone.Distortion({ distortion: 0.5, wet: 0 });
+    const bass = new Tone.MonoSynth({
+      oscillator: { type: "sawtooth" },
+      filter: { type: "lowpass", Q: 2.2, rolloff: -24 },
+      envelope: { attack: 0.004, decay: 0.25, sustain: 0.55, release: 0.12 },
+      filterEnvelope: { attack: 0.004, decay: 0.18, sustain: 0.25, release: 0.2, baseFrequency: 110, octaves: 2.8 },
+      portamento: 0.015,
+    });
+    const sub = new Tone.MonoSynth({ oscillator: { type: "sine" }, envelope: { attack: 0.004, decay: 0.3, sustain: 0.8, release: 0.12 }, filter: { frequency: 400 }, filterEnvelope: { baseFrequency: 300, octaves: 0 }, volume: -4 });
+    bass.chain(bassDist, ch.bass); sub.connect(ch.bass);
+
+    // drums
+    // bit reduction via waveshaper (no AudioWorklet needed)
+    const crushXf = new Tone.CrossFade(0);
+    const crushShaper = new Tone.WaveShaper(x => Math.round(x * 12) / 12, 4096);
+    const drumDist = new Tone.Distortion({ distortion: 0.7, wet: 0 });
+    const drumBus = new Tone.Gain(1);
+    drumBus.connect(crushXf.a); drumBus.connect(crushShaper); crushShaper.connect(crushXf.b);
+    crushXf.chain(drumDist, ch.drums);
+    const crusher = { wet: crushXf.fade };
+    const kick = new Tone.MembraneSynth({ pitchDecay: 0.045, octaves: 6, oscillator: { type: "sine" }, envelope: { attack: 0.001, decay: 0.42, sustain: 0, release: 0.1 } }).connect(drumBus);
+    const snareN = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.17, sustain: 0 }, volume: -8 });
+    snareN.chain(new Tone.Filter(1700, "bandpass", -12), drumBus);
+    const snareB = new Tone.MembraneSynth({ pitchDecay: 0.02, octaves: 2, envelope: { attack: 0.001, decay: 0.12, sustain: 0 }, volume: -10 }).connect(drumBus);
+    const hat = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.035, sustain: 0 }, volume: -16 });
+    hat.chain(new Tone.Filter(8000, "highpass"), drumBus);
+    const ohat = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.002, decay: 0.28, sustain: 0 }, volume: -20 });
+    ohat.chain(new Tone.Filter(7000, "highpass"), drumBus);
+    const metal = new Tone.MetalSynth({ envelope: { attack: 0.001, decay: 1.1, release: 0.3 }, harmonicity: 5.1, modulationIndex: 28, resonance: 3800, octaves: 1.4, volume: -26 });
+    metal.frequency.value = 180;
+    metal.connect(drumBus);
+
+    // lead
+    const vib = new Tone.Vibrato({ frequency: 5.2, depth: 0.06 });
+    const lead = new Tone.MonoSynth({
+      oscillator: { type: "fatsawtooth", count: 2, spread: 14 },
+      filter: { type: "lowpass", Q: 3, rolloff: -24 },
+      envelope: { attack: 0.02, decay: 0.3, sustain: 0.75, release: 0.25 },
+      filterEnvelope: { attack: 0.03, decay: 0.4, sustain: 0.45, release: 0.3, baseFrequency: 500, octaves: 3.2 },
+      portamento: 0.045,
+    });
+    lead.chain(vib, ch.lead);
+
+    // pad + riser (bridge)
+    const padFilter = new Tone.Filter(1600, "lowpass");
+    const pad = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: "fatsawtooth", count: 3, spread: 28 },
+      envelope: { attack: 0.9, decay: 0.4, sustain: 0.85, release: 2.2 },
+    });
+    pad.chain(new Tone.Distortion(0.55), padFilter, ch.pad);
+    const riserF = new Tone.Filter(300, "bandpass", -12);
+    const riserG = new Tone.Gain(0);
+    const riser = new Tone.Noise("pink");
+    riser.chain(riserF, riserG, ch.pad);
+
+    BARS.forEach((b, i) => {
+      const { sec, local, chord } = b;
+      const id = sec.id;
+      const isA = id === "a" || id === "a2";
+      const next = BARS[i + 1]?.chord || chord;
+
+      // per-bar mix state (robust to seeking)
+      at(T(i, 0), time => {
+        const intro = id === "intro";
+        epFilter.frequency.cancelScheduledValues(time);
+        epFilter.frequency.linearRampToValueAtTime(intro ? 500 + 700 * (local + 1) : id === "outro" ? 3000 : 6000, time + BAR);
+        crusher.wet.setValueAtTime(id === "bridge" ? 0.55 : 0, time);
+        drumDist.wet.setValueAtTime(id === "bridge" ? 0.35 : 0, time);
+        bassDist.wet.setValueAtTime(id === "bridge" ? 0.45 : 0, time);
+        if (id !== "bridge") riserG.gain.setValueAtTime(0, time);
+      });
+
+      // keys
+      const v = chord.v;
+      const play = (step, dur, vel) => at(T(i, step) + human(0.008), t => { ep.triggerAttackRelease(v, D(dur), t, vel); flash("keys", t); });
+      if (id === "intro") { play(0, 15, 0.55); if (local % 2) play(10, 5, 0.35); }
+      else if (isA) {
+        if (local % 8 === 7) { play(0, 8, 0.6); play(10, 6, 0.45); }
+        else { play(0, 3, 0.62); play(6, 2, 0.42); play(10, 5, 0.52); }
+      } else if (id === "b") {
+        if (local % 2 === 0) play(0, 16, 0.55); else { play(6, 3, 0.4); play(10, 6, 0.45); }
+      } else if (id === "outro") {
+        play(0, local === 3 ? 30 : 15, local === 3 ? 0.5 : 0.55);
+      }
+
+      // jazz piano fills in A'
+      if (id === "a2" && local % 2 === 1 && local % 8 !== 7) {
+        const run = v.map(n => m(n) + 12).reverse();
+        run.forEach((n, k) => at(T(i, 12 + k), t => piano.triggerAttackRelease(f(n), D(1), t, 0.35 + 0.05 * k)));
+      }
+
+      // bass
+      const r = chord.root;
+      const bn = (step, midi, dur, vel) => at(T(i, step) + human(0.004), t => {
+        bass.triggerAttackRelease(f(midi), D(dur), t, vel); sub.triggerAttackRelease(f(midi), D(dur), t, vel * 0.9); flash("bass", t);
+      });
+      let approach = next.root - 1; if (Math.abs(approach - r) > 7) approach += approach > r ? -12 : 12;
+      if (isA) {
+        if (local % 8 === 7) {
+          bn(0, r, 3, 0.95); bn(4, r + 12, 2, 0.7);
+          let n = r + 12; const run = [];
+          while (run.length < 8) { n--; if (DB_SCALE.has(((n % 12) + 12) % 12)) run.push(n); }
+          run.forEach((note, k) => bn(8 + k, note, 1, 0.6 + 0.04 * k));
+        } else {
+          bn(0, r, 2, 1); bn(3, r, 1, 0.45); bn(6, r + 7, 2, 0.8); bn(10, r + 12, 1, 0.7); bn(11, r + 7, 1, 0.5); bn(14, r, 1, 0.7); bn(15, approach, 1, 0.8);
+        }
+      } else if (id === "b") {
+        bn(0, r, 6, 1); bn(6, r + 12, 1, 0.5); bn(7, r, 2, 0.7); bn(10, r + 7, 3, 0.8); bn(14, approach, 2, 0.7);
+      } else if (id === "bridge") {
+        bn(0, r, 8, 1); bn(8, r, 4, 0.8); bn(12, r, 2, 0.6); bn(14, r + 12, 2, 0.7);
+      } else if (id === "outro") {
+        bn(0, r, local === 3 ? 30 : 15, 0.8);
+      }
+
+      // drums
+      const k = (step, vel = 0.9) => at(T(i, step), t => { kick.triggerAttackRelease("C1", "8n", t, vel); flash("drums", t); });
+      const sn = (step, vel = 0.9) => at(T(i, step) + human(0.004), t => { snareN.triggerAttackRelease("16n", t, vel); snareB.triggerAttackRelease("G2", "16n", t, vel); });
+      const h = (step, vel = 0.5) => at(T(i, step) + human(0.007), t => hat.triggerAttackRelease("32n", t, vel));
+      const oh = (step, vel = 0.5) => at(T(i, step), t => ohat.triggerAttackRelease("8n", t, vel));
+      const crash = () => at(T(i, 0), t => metal.triggerAttackRelease("C4", "1n", t, 0.6));
+      if (id === "intro" && local >= 6) {
+        for (let s = 0; s < 16; s += 2) h(s, 0.25 + 0.1 * (local - 6));
+        if (local === 7) { sn(12, 0.3); sn(13, 0.45); sn(14, 0.6); sn(15, 0.8); }
+      } else if (isA) {
+        if (local === 0) crash();
+        k(0); k(7, 0.55); k(10, 0.8); sn(4); sn(12); sn(9, 0.18); sn(15, 0.15);
+        for (let s = 0; s < 16; s += 2) h(s, s % 4 === 0 ? 0.55 : 0.4);
+        h(7, 0.2); h(13, 0.22);
+        if (id === "a2") for (let s = 1; s < 16; s += 2) h(s, 0.18);
+        if (local % 4 === 3) oh(14, 0.55);
+        if (local === 15 && id === "a") { sn(13, 0.5); sn(14, 0.7); sn(15, 0.85); }
+      } else if (id === "b") {
+        if (local === 0) crash();
+        k(0); k(3, 0.7); k(11, 0.8); sn(8); sn(14, 0.2);
+        for (let s = 0; s < 16; s += 2) h(s, 0.45);
+        if (local % 2 === 1) { h(13, 0.3); h(15, 0.35); }
+        if (local === 7) { h(12, 0.3); h(13, 0.4); h(14, 0.5); h(15, 0.6); }
+      } else if (id === "bridge") {
+        if (local % 2 === 0) crash();
+        k(0, 1); k(6, 0.8); k(8, 1); k(10, 0.6); sn(4, 1); sn(12, 1);
+        for (let s = 0; s < 16; s++) h(s, s % 2 ? 0.3 : 0.55);
+        if (local === 7) { sn(8, 0.6); sn(10, 0.7); sn(12, 0.85); sn(13, 0.9); sn(14, 1); sn(15, 1); }
+      } else if (id === "outro" && local === 0) {
+        crash();
+      }
+
+      // lead
+      const ln = (step, note, dur, vel = 0.8) => at(T(i, step), t => { lead.triggerAttackRelease(note, D(dur) * 0.95, t, vel); flash("lead", t); });
+      if (isA) {
+        let phrase = MEL_A[local % 8];
+        if (local === 15) phrase = id === "a" ? MEL_A_END : MEL_A2_END;
+        phrase.forEach(([s, n, d]) => ln(s, n, d));
+      } else if (id === "b" && MEL_B[local]) {
+        MEL_B[local].forEach(([s, n, d]) => ln(s, n, d, 0.6));
+      }
+
+      // pad + riser in bridge
+      if (id === "bridge") {
+        at(T(i, 0), t => { pad.triggerAttackRelease(chord.v, D(15), t, 0.5); flash("pad", t); });
+        if (local === 6) at(T(i, 0), t => {
+          riserF.frequency.cancelScheduledValues(t);
+          riserF.frequency.setValueAtTime(300, t); riserF.frequency.exponentialRampToValueAtTime(6000, t + 2 * BAR);
+          riserG.gain.cancelScheduledValues(t);
+          riserG.gain.setValueAtTime(0, t); riserG.gain.linearRampToValueAtTime(0.6, t + 2 * BAR - 0.05); riserG.gain.linearRampToValueAtTime(0, t + 2 * BAR);
+        });
+      }
+    });
+
+    riser.start();
+    return { releaseAll() { ep.releaseAll(); piano.releaseAll(); pad.releaseAll(); [bass, sub, lead].forEach(s => s.triggerRelease()); } };
+  },
+});
+})();
+
+// ===== 02-dansen.js =====
+// No.2 断線
+(() => {
+// fixed upper triad (D F A) over a falling bass — the idea taken from the previous bridge
+const TOP = ["D4", "F4", "A4"];
+const C = {
+  Dm:     { sym: "Dm",          root: 38, v: TOP },
+  DmCs:   { sym: "Dm/C♯",       root: 37, v: TOP },
+  DmC:    { sym: "Dm/C",        root: 36, v: TOP },
+  DmB:    { sym: "Dm/B",        root: 35, v: TOP },
+  Bbmaj7: { sym: "B♭maj7",      root: 34, v: TOP },
+  DmA:    { sym: "Dm/A",        root: 33, v: TOP },
+  DmG:    { sym: "Dm/G",        root: 31, v: TOP },
+  A7:     { sym: "A7",          root: 33, v: ["C#4", "E4", "G4"] },
+  Bb:     { sym: "B♭",          root: 34, v: ["D4", "F4", "Bb4"] },
+  Gm:     { sym: "Gm",          root: 31, v: ["D4", "G4", "Bb4"] },
+  A:      { sym: "A",           root: 33, v: ["C#4", "E4", "A4"] },
+  Asus:   { sym: "Asus4",       root: 33, v: ["D4", "E4", "A4"] },
+  Bbadd9: { sym: "B♭(add9)",    root: 34, v: ["C4", "D4", "F4"] },
+  Gm9:    { sym: "Gm9",         root: 31, v: ["Bb3", "D4", "F4", "A4"] },
+};
+const VERSE = ["Dm", "DmCs", "DmC", "DmB", "Bbmaj7", "DmA", "DmG", "A7"];
+const DROP = ["Dm", "Bb", "Gm", "A", "Dm", "Bb", "Gm", "Asus"];
+const SECTIONS = [
+  { id: "intro",  name: "イントロ",   bars: 8,  chords: VERSE },
+  { id: "verse",  name: "ヴァース",   bars: 16, chords: [...VERSE, ...VERSE] },
+  { id: "build",  name: "ビルド",     bars: 8,  chords: ["Bbadd9", "Bbadd9", "Gm9", "Gm9", "Bbadd9", "Bbadd9", "Asus", "A"] },
+  { id: "drop",   name: "ドロップ",   bars: 16, chords: [...DROP, ...DROP] },
+  { id: "break",  name: "ピアノ",     bars: 8,  chords: VERSE },
+  { id: "drop2",  name: "ドロップ2",  bars: 16, chords: [...DROP, ...DROP] },
+  { id: "outro",  name: "アウトロ",   bars: 4,  chords: ["Dm", "DmCs", "DmC", "Dm"] },
+];
+
+// drop lead (original): [step, note, durSteps] per bar of the 8-bar phrase
+const MEL = [
+  [[0, "D5", 3], [3, "F5", 3], [6, "A5", 2], [8, "G5", 4], [12, "F5", 2], [14, "E5", 2]],
+  [[0, "D5", 6], [6, "F5", 2], [8, "C5", 4], [12, "D5", 4]],
+  [[0, "Bb4", 3], [3, "D5", 3], [6, "G5", 2], [8, "F5", 4], [12, "D5", 4]],
+  [[0, "C#5", 8], [8, "E5", 4], [12, "A4", 4]],
+  [[0, "D5", 3], [3, "F5", 3], [6, "A5", 2], [8, "Bb5", 4], [12, "A5", 2], [14, "G5", 2]],
+  [[0, "F5", 6], [6, "D5", 2], [8, "F5", 4], [12, "Bb5", 4]],
+  [[0, "A5", 3], [3, "G5", 3], [6, "F5", 2], [8, "D5", 4], [12, "Bb4", 4]],
+  [[0, "C#5", 4], [4, "D5", 4], [8, "E5", 4], [12, "A5", 4]],
+];
+const MEL_LAST = [[0, "D5", 16]];
+
+SONGS.push({
+  file: "02-dansen.js",
+  id: "dansen",
+  no: 2,
+  title: "断線",
+  date: "2026-09-26",
+  bpm: 104,
+  swing: 0,
+  key: "D マイナー",
+  genre: "インダストリアル",
+  tail: 5,
+  masterGain: 0.75,
+  comp: {
+    "threshold": -18,
+    "ratio": 4,
+    "attack": 0.005,
+    "release": 0.15
+  },
+  accent: {
+    "light": "#1f8ea6",
+    "dark": "#5cc8e0"
+  },
+  blurb: "「17時のシグナル」のブリッジで使った手法を曲全体に広げました。上の和音を動かさずにベースだけ半音ずつ下げ、ドラムを削って歪ませています。途中で一度ピアノだけになります。音量は大きめです。",
+  parts: [
+    [
+      "drums",
+      "ドラム"
+    ],
+    [
+      "bass",
+      "ベース"
+    ],
+    [
+      "pad",
+      "パッド・シーケンス"
+    ],
+    [
+      "lead",
+      "リード"
+    ],
+    [
+      "piano",
+      "ピアノ"
+    ],
+    [
+      "noise",
+      "ノイズ"
+    ]
+  ],
+  why: [
+    [
+      "動かない和音",
+      "D・F・A 固定",
+      "上の三和音をほとんど動かさず、ベースだけを D → C♯ → C → B → B♭ → A と半音ずつ下げます。ヴァースとピアノのパートがこの進行です。",
+      [
+        [
+          "Nine Inch Nails",
+          40
+        ],
+        [
+          "Radiohead",
+          10
+        ]
+      ]
+    ],
+    [
+      "削れて歪むドラム",
+      "ビット削り＋ディストーション",
+      "ドラム全体の解像度を落としてから歪ませています。ヴァースは弱め、ビルドで徐々に上げ、最後のドロップで最大になります。",
+      [
+        [
+          "Nine Inch Nails",
+          40
+        ],
+        [
+          "JPEGMAFIA",
+          23
+        ]
+      ]
+    ],
+    [
+      "ノイズ",
+      "ドローン／ライザー",
+      "イントロは帯域をしぼったノイズがゆっくり開き、ビルドで8小節かけて上がっていきます。ドロップ直前に一瞬すべての音を止めます。",
+      [
+        [
+          "Nine Inch Nails",
+          40
+        ]
+      ]
+    ],
+    [
+      "ポンプする和音",
+      "キックでダッキング",
+      "ドロップではキックのたびにパッドと16分のシーケンスの音量を一瞬下げ、全体を脈打たせています。",
+      [
+        [
+          "Kanye West",
+          22
+        ],
+        [
+          "JPEGMAFIA",
+          23
+        ]
+      ]
+    ],
+    [
+      "ピアノだけの8小節",
+      "The Fragile 的な静けさ",
+      "すべての音を止めてピアノだけでヴァースの進行を弾き、最後はドラムの32分の連打で次のドロップに入ります。よく聴いているNINの4曲はすべて『The Fragile』の収録曲です。",
+      [
+        [
+          "Nine Inch Nails",
+          40
+        ],
+        [
+          "James Blake",
+          8
+        ]
+      ]
+    ],
+    [
+      "潰したリード",
+      "矩形波＋強い歪み",
+      "ドロップのメロディは、歪ませてから解像度を落とした矩形波で鳴らしています。2回目は1オクターブ上を重ねます。",
+      [
+        [
+          "Denzel Curry",
+          6
+        ],
+        [
+          "JPEGMAFIA",
+          23
+        ]
+      ]
+    ]
+  ],
+  chords: C,
+  sections: SECTIONS,
+  build(transport, kit) {
+    const { T, D, m, f, BAR, BARS, at, flash, human } = kit;
+    const master = kit.master;
+    const reverb = new Tone.Reverb({ decay: 4.5, preDelay: 0.03, wet: 1 });
+    kit.bus("rev", -8, reverb);
+    const ch = kit.ch;
+    kit.channel("drums", -7, { rev: -20 }); kit.channel("bass", -9); kit.channel("pad", -16, { rev: -10 }); kit.channel("lead", -15, { rev: -12 }); kit.channel("noise", -20, { rev: -6 }); kit.channel("piano", -10, { rev: -4 });
+
+    // drums: bus -> lowpass (muffle) -> crusher crossfade -> distortion
+    const drumLP = new Tone.Filter(20000, "lowpass");
+    const crushXf = new Tone.CrossFade(0);
+    const crushShaper = new Tone.WaveShaper(x => Math.round(x * 10) / 10, 4096);
+    const drumDist = new Tone.Distortion({ distortion: 0.75, wet: 0 });
+    const drumBus = new Tone.Gain(1);
+    drumBus.connect(drumLP);
+    drumLP.connect(crushXf.a); drumLP.connect(crushShaper); crushShaper.connect(crushXf.b);
+    crushXf.chain(drumDist, ch.drums);
+    const kick = new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 7, oscillator: { type: "sine" }, envelope: { attack: 0.001, decay: 0.5, sustain: 0, release: 0.1 } }).connect(drumBus);
+    const snareN = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.2, sustain: 0 }, volume: -6 });
+    snareN.chain(new Tone.Filter(1500, "bandpass", -12), drumBus);
+    const snareB = new Tone.MembraneSynth({ pitchDecay: 0.02, octaves: 2, envelope: { attack: 0.001, decay: 0.14, sustain: 0 }, volume: -8 }).connect(drumBus);
+    const clap = new Tone.NoiseSynth({ noise: { type: "pink" }, envelope: { attack: 0.004, decay: 0.12, sustain: 0 }, volume: -10 });
+    clap.chain(new Tone.Filter(1100, "bandpass"), drumBus);
+    const hat = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.03, sustain: 0 }, volume: -17 });
+    hat.chain(new Tone.Filter(8500, "highpass"), drumBus);
+    const metal = new Tone.MetalSynth({ envelope: { attack: 0.001, decay: 1.4, release: 0.4 }, harmonicity: 5.1, modulationIndex: 32, resonance: 3200, octaves: 1.5, volume: -24 });
+    metal.connect(drumBus);
+    const clank = new Tone.MetalSynth({ envelope: { attack: 0.001, decay: 0.12, release: 0.05 }, harmonicity: 3.1, modulationIndex: 16, resonance: 2200, octaves: 1, volume: -22 });
+    clank.connect(drumBus);
+
+    // bass: saw -> distortion + clean sub
+    const bassDist = new Tone.Distortion({ distortion: 0.6, wet: 0.5 });
+    const bassLP = new Tone.Filter(900, "lowpass");
+    const bass = new Tone.MonoSynth({
+      oscillator: { type: "fatsawtooth", count: 2, spread: 18 },
+      filter: { type: "lowpass", Q: 3, rolloff: -24 },
+      envelope: { attack: 0.003, decay: 0.2, sustain: 0.6, release: 0.08 },
+      filterEnvelope: { attack: 0.003, decay: 0.15, sustain: 0.3, release: 0.15, baseFrequency: 90, octaves: 3.2 },
+    });
+    const sub = new Tone.MonoSynth({ oscillator: { type: "sine" }, envelope: { attack: 0.003, decay: 0.3, sustain: 0.9, release: 0.08 }, filter: { frequency: 300 }, filterEnvelope: { baseFrequency: 250, octaves: 0 }, volume: -3 });
+    bass.chain(bassDist, bassLP, ch.bass); sub.connect(ch.bass);
+
+    // pad: detuned saws -> distortion -> filter -> sidechain duck
+    const padFilter = new Tone.Filter(1400, "lowpass");
+    const duck = new Tone.Gain(1);
+    const pad = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "fatsawtooth", count: 3, spread: 32 }, envelope: { attack: 0.6, decay: 0.4, sustain: 0.85, release: 2.4 } });
+    pad.maxPolyphony = 16;
+    pad.chain(new Tone.Distortion(0.6), padFilter, duck, ch.pad);
+    // 16th ostinato
+    const ostFilter = new Tone.Filter(1200, "lowpass", -24);
+    const ost = new Tone.MonoSynth({ oscillator: { type: "square" }, envelope: { attack: 0.002, decay: 0.09, sustain: 0.1, release: 0.05 }, filterEnvelope: { baseFrequency: 400, octaves: 2.5, decay: 0.08, sustain: 0.1 }, volume: -12 });
+    ost.chain(ostFilter, duck);
+
+    // lead: square -> heavy distortion -> crush
+    const lead = new Tone.MonoSynth({
+      oscillator: { type: "square" },
+      filter: { type: "lowpass", Q: 4, rolloff: -24 },
+      envelope: { attack: 0.005, decay: 0.2, sustain: 0.7, release: 0.2 },
+      filterEnvelope: { attack: 0.01, decay: 0.3, sustain: 0.5, release: 0.2, baseFrequency: 700, octaves: 2.6 },
+      portamento: 0.03,
+    });
+    const leadHi = new Tone.MonoSynth({ oscillator: { type: "sawtooth" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.6, release: 0.2 }, filterEnvelope: { baseFrequency: 1200, octaves: 2 }, portamento: 0.03, volume: -9 });
+    const leadDist = new Tone.Distortion(0.85);
+    const leadCrush = new Tone.WaveShaper(x => Math.round(x * 6) / 6, 4096);
+    lead.chain(leadDist, leadCrush, new Tone.Filter(3500, "lowpass"), ch.lead);
+    leadHi.chain(leadDist);
+
+    // clean piano for the break
+    const piano = new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 2, modulationIndex: 1.2,
+      oscillator: { type: "triangle" }, modulation: { type: "sine" },
+      envelope: { attack: 0.002, decay: 2.2, sustain: 0.08, release: 1.6 },
+      modulationEnvelope: { attack: 0.002, decay: 0.25, sustain: 0, release: 0.2 },
+    });
+    piano.maxPolyphony = 16;
+    piano.connect(ch.piano);
+
+    // noise: drone / riser / tail
+    const noiseF = new Tone.Filter(400, "bandpass", -12);
+    const noiseG = new Tone.Gain(0);
+    const noise = new Tone.Noise("pink");
+    noise.chain(noiseF, noiseG, ch.noise);
+
+    const isDrop = id => id === "drop" || id === "drop2";
+
+    BARS.forEach((b, i) => {
+      const { sec, local, chord } = b;
+      const id = sec.id;
+      const drop = isDrop(id);
+
+      // per-bar mix state (set every bar so seeking lands in the right state)
+      at(T(i, 0), time => {
+        const crush = { intro: 0, verse: 0.35, build: Math.min(0.9, 0.2 + local * 0.1), drop: 0.55, break: 0, drop2: 0.7, outro: 0.3 }[id];
+        const dist = { intro: 0, verse: 0.25, build: 0.3 + local * 0.05, drop: 0.5, break: 0, drop2: 0.6, outro: 0.2 }[id];
+        crushXf.fade.setValueAtTime(crush, time);
+        drumDist.wet.setValueAtTime(dist, time);
+        drumLP.frequency.cancelScheduledValues(time);
+        drumLP.frequency.setValueAtTime(id === "intro" ? 350 + local * 60 : 20000, time);
+        padFilter.frequency.cancelScheduledValues(time);
+        if (id === "intro") padFilter.frequency.linearRampToValueAtTime(300 + 150 * (local + 1), time + BAR);
+        else if (id === "build") padFilter.frequency.linearRampToValueAtTime(800 + 400 * (local + 1), time + BAR);
+        else padFilter.frequency.setValueAtTime(drop ? 2600 : 1400, time);
+        ostFilter.frequency.cancelScheduledValues(time);
+        ostFilter.frequency.linearRampToValueAtTime(id === "build" ? 900 + 500 * local : drop ? 2200 : 1100, time + BAR);
+        bassDist.wet.setValueAtTime(drop ? 0.8 : 0.5, time);
+        // noise bed
+        noiseG.gain.cancelScheduledValues(time); noiseF.frequency.cancelScheduledValues(time);
+        if (id === "intro") { noiseG.gain.setValueAtTime(0.25, time); noiseF.frequency.setValueAtTime(250 + 60 * local, time); noiseF.frequency.linearRampToValueAtTime(250 + 60 * (local + 1), time + BAR); }
+        else if (id === "build") { const g0 = local / 8, g1 = (local + 1) / 8; noiseG.gain.setValueAtTime(0.7 * g0, time); noiseG.gain.linearRampToValueAtTime(local === 7 ? 0 : 0.7 * g1, time + BAR - 0.02); noiseF.frequency.setValueAtTime(400 * 2 ** (local * 0.55), time); noiseF.frequency.exponentialRampToValueAtTime(400 * 2 ** ((local + 1) * 0.55), time + BAR); }
+        else if (id === "break") { noiseG.gain.setValueAtTime(0.08, time); noiseF.frequency.setValueAtTime(3000, time); }
+        else if (id === "outro") { noiseG.gain.setValueAtTime(0.35 * (1 - local / 4), time); noiseG.gain.linearRampToValueAtTime(0.35 * (1 - (local + 1) / 4), time + BAR); noiseF.frequency.setValueAtTime(900 - local * 150, time); }
+        else noiseG.gain.setValueAtTime(0, time);
+      });
+
+      // pad
+      if (id !== "break") {
+        const vel = id === "intro" ? 0.35 : drop ? 0.55 : 0.45;
+        at(T(i, 0), t => { pad.triggerAttackRelease(chord.v, D(id === "outro" && local === 3 ? 40 : 15), t, vel); flash("pad", t); });
+      }
+
+      // ostinato: 16ths through the chord tones
+      if (id === "verse" || id === "build" || id === "drop2") {
+        const tones = chord.v.map(m);
+        const seq = [tones[0], tones[1], tones[2], tones[1]];
+        for (let s = 0; s < 16; s++) {
+          if (id === "verse" && local < 4 && s % 2) continue;
+          const n = seq[s % 4] + (s % 8 === 6 ? 12 : 0);
+          at(T(i, s), t => ost.triggerAttackRelease(f(n), D(0.8), t, s % 4 === 0 ? 0.9 : 0.6));
+        }
+      }
+
+      // kick-driven duck on pad + ostinato
+      const duckAt = t => { duck.gain.cancelScheduledValues(t); duck.gain.setValueAtTime(0.25, t); duck.gain.linearRampToValueAtTime(1, t + 0.22); };
+
+      // drums
+      const k = (step, vel = 0.95, dk = false) => at(T(i, step), t => { kick.triggerAttackRelease("C1", "8n", t, vel); flash("drums", t); if (dk) duckAt(t); });
+      const sn = (step, vel = 0.9) => at(T(i, step) + human(), t => { snareN.triggerAttackRelease("16n", t, vel); snareB.triggerAttackRelease("G2", "16n", t, vel); });
+      const cl = (step, vel = 0.8) => at(T(i, step) + 0.008, t => clap.triggerAttackRelease("16n", t, vel));
+      const h = (step, vel = 0.45) => at(T(i, step) + human(), t => hat.triggerAttackRelease("32n", t, vel));
+      const crash = () => at(T(i, 0), t => metal.triggerAttackRelease("C3", "1n", t, 0.7));
+      const ck = (step, vel = 0.6) => at(T(i, step), t => clank.triggerAttackRelease("G4", "32n", t, vel));
+
+      if (id === "intro") {
+        if (local % 4 === 0) crash();
+        if (local >= 4) [0, 4, 8, 12].forEach(s => k(s, 0.7));
+      } else if (id === "verse") {
+        if (local % 8 === 0) crash();
+        k(0); k(3, 0.7); k(8); k(11, 0.55); sn(4); sn(12);
+        for (let s = 0; s < 16; s += 2) h(s, s % 4 === 2 ? 0.5 : 0.35);
+        if (local % 2 === 1) ck(14); ck(7, 0.35);
+        if (local === 15) { sn(13, 0.5); sn(14, 0.7); sn(15, 0.9); }
+      } else if (id === "build") {
+        [0, 4, 8, 12].forEach(s => { if (!(local === 7 && s >= 12)) k(s, 0.9); });
+        const every = local < 2 ? 4 : local < 6 ? 2 : 1;
+        for (let s = 0; s < 16; s += every) {
+          if (local === 7 && s >= 12) break; // silence right before the drop
+          sn(s, Math.min(1, 0.35 + (local * 16 + s) / 128 * 0.65));
+        }
+      } else if (drop) {
+        if (local % 4 === 0) crash();
+        k(0, 1, true); k(6, 0.85, true); k(8, 1, true); k(10, 0.7); k(14, 0.7, true);
+        if (id === "drop2") k(3, 0.6);
+        sn(4, 1); sn(12, 1); cl(4); cl(12);
+        for (let s = 0; s < 16; s++) h(s, s % 2 ? (id === "drop2" ? 0.5 : 0.35) : 0.5);
+        ck(2, 0.4); ck(10, 0.4);
+        if (local === 15 && id === "drop") { k(12, 0.9); sn(13, 0.8); sn(14, 0.9); sn(15, 1); }
+      } else if (id === "break" && local === 7) {
+        // glitch: 32nd-note stutter into the last drop
+        for (let s = 8; s < 16; s += 0.5) {
+          const v = 0.3 + (s - 8) / 8 * 0.7;
+          at(T(i, s), t => { snareN.triggerAttackRelease("64n", t, v); if (s % 2 === 0) kick.triggerAttackRelease("C1", "32n", t, v * 0.8); });
+        }
+      } else if (id === "outro") {
+        if (local === 0) crash();
+        if (local < 2) [0, 4, 8, 12].forEach(s => k(s, 0.8 - local * 0.3 - s / 40));
+      }
+
+      // bass
+      const r = chord.root;
+      const bn = (step, midi, dur, vel) => at(T(i, step), t => {
+        bass.triggerAttackRelease(f(midi), D(dur), t, vel); sub.triggerAttackRelease(f(midi), D(dur), t, vel); flash("bass", t);
+      });
+      if (id === "verse") {
+        for (let s = 0; s < 16; s += 2) bn(s, r, 1.6, s % 4 === 0 ? 1 : 0.6);
+      } else if (id === "build") {
+        const br = local >= 6 ? 33 : r;
+        for (let s = 0; s < 16; s += local < 4 ? 2 : 1) { if (local === 7 && s >= 12) break; bn(s, br, local < 4 ? 1.6 : 0.8, 0.55 + local * 0.05); }
+      } else if (drop) {
+        [[0, 3], [3, 3], [6, 2], [8, 3], [11, 3], [14, 2]].forEach(([s, d], j) => bn(s, r, d * 0.9, j % 3 === 0 ? 1 : 0.75));
+      } else if (id === "outro") {
+        bn(0, r, local === 3 ? 30 : 15, 0.8);
+      }
+
+      // lead in drops
+      if (drop) {
+        const phrase = local === 15 && id === "drop2" ? MEL_LAST : MEL[local % 8];
+        phrase.forEach(([s, n, d]) => at(T(i, s), t => {
+          lead.triggerAttackRelease(n, D(d) * 0.92, t, 0.85); flash("lead", t);
+          if (id === "drop2") leadHi.triggerAttackRelease(f(m(n) + 12), D(d) * 0.92, t, 0.6);
+        }));
+      }
+
+      // break: clean piano plays the falling line
+      if (id === "break") {
+        const vs = chord.v.map(n => f(m(n)));
+        at(T(i, 0), t => { piano.triggerAttackRelease([f(r + 12), ...vs], D(14), t, 0.45); flash("piano", t); });
+        const top = m(chord.v[chord.v.length - 1]) + 12;
+        if (local % 2 === 0) at(T(i, 8), t => piano.triggerAttackRelease(f(top), D(6), t, 0.3));
+        else at(T(i, 10), t => piano.triggerAttackRelease(f(top - 3), D(5), t, 0.28));
+      }
+      if (id === "outro" && local === 3) {
+        at(T(i, 8), t => piano.triggerAttackRelease(["D5", "A5"], D(24), t, 0.3));
+      }
+    });
+
+    noise.start();
+    return { releaseAll() { pad.releaseAll(); piano.releaseAll(); [bass, sub, lead, leadHi, ost].forEach(s => s.triggerRelease()); } };
+  },
+});
+})();
+
+// ===== 03-kirihari.js =====
+// No.3 切り貼り — experimental hip-hop with a beat switch
+(() => {
+// "sample" chords (F minor) and the beat-switch chords a half step down (E minor)
+const C = {
+  Fm9:    { sym: "Fm9",          root: 29, v: ["Ab3", "C4", "Eb4", "G4"] },
+  Dbmaj7: { sym: "D♭maj7",       root: 37, v: ["Ab3", "C4", "Db4", "F4"] },
+  Bbm9:   { sym: "B♭m9",         root: 34, v: ["Db4", "F4", "Ab4", "C5"] },
+  C7b9:   { sym: "C7(♭9)",       root: 36, v: ["Bb3", "Db4", "E4", "G4"] },
+  Em9:    { sym: "Em9",          root: 28, v: ["G3", "B3", "D4", "F#4"] },
+  Cmaj7:  { sym: "Cmaj7(♯11)",   root: 36, v: ["B3", "E4", "F#4", "G4"] },
+  Am9:    { sym: "Am9",          root: 33, v: ["G3", "B3", "C4", "E4"] },
+  B7alt:  { sym: "B7(♯5♭9)",     root: 35, v: ["A3", "D#4", "G4", "C5"] },
+};
+const LOOP = ["Fm9", "Dbmaj7", "Bbm9", "C7b9"];
+const SWITCH = ["Em9", "Cmaj7", "Am9", "B7alt"];
+const SECTIONS = [
+  { id: "intro",  name: "イントロ",       bars: 4,  chords: LOOP, intensity: 0.25 },
+  { id: "a",      name: "ビートA",        bars: 16, chords: LOOP, intensity: 0.6 },
+  { id: "switch", name: "ビートスイッチ", bars: 8,  chords: SWITCH, intensity: 1 },
+  { id: "glitch", name: "グリッチ",       bars: 4,  chords: ["C7b9"], intensity: 0.85 },
+  { id: "b",      name: "ビートB",        bars: 16, chords: LOOP, intensity: 0.7 },
+  { id: "outro",  name: "アウトロ",       bars: 8,  chords: [...LOOP, ...LOOP], intensity: 0.25 },
+];
+// lead for beat B (original): [step, note, durSteps] per bar
+const MEL = [
+  [[0, "C5", 3], [3, "Eb5", 3], [6, "F5", 2], [8, "G5", 4], [12, "Ab5", 2], [14, "G5", 2]],
+  [[0, "F5", 6], [6, "Eb5", 2], [8, "C5", 6]],
+  [[2, "Db5", 2], [4, "F5", 2], [6, "Ab5", 4], [10, "G5", 2], [12, "F5", 4]],
+  [[0, "E5", 4], [4, "Db5", 4], [8, "Bb4", 4], [12, "G4", 4]],
+];
+const MEL_HI = [
+  [[0, "G5", 3], [3, "Ab5", 3], [6, "C6", 2], [8, "Bb5", 4], [12, "Ab5", 2], [14, "G5", 2]],
+  [[0, "F5", 4], [4, "Ab5", 4], [8, "C6", 8]],
+  [[0, "Db6", 4], [4, "C6", 2], [6, "Ab5", 2], [8, "F5", 4], [12, "Db5", 4]],
+  [[0, "E5", 2], [2, "G5", 2], [4, "Bb5", 2], [6, "Db6", 2], [8, "C6", 8]],
+];
+
+SONGS.push({
+  id: "kirihari", no: 3, title: "切り貼り", date: "2026-09-26",
+  bpm: 88, swing: 0.26, key: "F マイナー → E マイナー", genre: "実験的ヒップホップ", tail: 4,
+  masterGain: 0.8, comp: { threshold: -20, ratio: 4, attack: 0.004, release: 0.16 },
+  accent: { light: "#b8336a", dark: "#ef7aa8" },
+  blurb: "ソウルのレコードから切り出したような和音を、刻んで、音程を変えて、並べ直したビートです。途中で予告なしに半音下のキーと倍テンポのトラップに切り替わり、テープが止まるように崩れてから元のビートに戻ります。",
+  parts: [["drums", "ドラム"], ["bass", "808"], ["chop", "サンプル"], ["lead", "リード"], ["noise", "レコードノイズ"]],
+  why: [
+    ["サンプル風の上ネタ", "刻んで並べ直した和音", "Fm9 → D♭maj7 → B♭m9 → C7(♭9) を、こもった音色で細かく刻んで鳴らしています。小節の最後の一切れは1オクターブ下げ、回転数を落としたレコードのようにしています。", [["Kanye West", 22], ["A Tribe Called Quest", 7], ["Common", 9]]],
+    ["ビートスイッチ", "予告なしの転換", "8小節だけ、キーを半音下げ、ハイハットを3連の連打が入るトラップに変えます。展開の途中で曲ががらっと変わるのは、よく聴いているアーティストたちがよく使う手です。", [["JPEGMAFIA", 23], ["Kendrick Lamar", 33], ["Tyler, The Creator", 20]]],
+    ["すべる808", "歪ませたサブベース", "低音は音程がすべる808で、音と音をつなげてオクターブを上下させています。軽く歪ませて、小さいスピーカーでも聞こえるようにしました。", [["Denzel Curry", 6], ["Doechii", 6]]],
+    ["テープストップ", "グリッチの4小節", "和音を16分で連打しながら半音ずつ下げていき、ドラムも細かく刻んで崩します。最後の1拍は無音にしてからビートBに戻ります。", [["JPEGMAFIA", 23]]],
+    ["ヨレたスウィング", "16分に26%", "裏の16分を大きめに遅らせた、手打ち風のブーンバップです。", [["A Tribe Called Quest", 7], ["Kendrick Lamar", 33]]],
+    ["リード", "矩形波＋ビブラート", "ビートBではシンセのメロディを重ねます。後半の8小節は音域を上げています。", [["Tyler, The Creator", 20]]],
+  ],
+  chords: C,
+  sections: SECTIONS,
+  build(transport, kit) {
+    const { T, D, m, f, BAR, BARS, at, flash, human } = kit;
+    const ch = kit.ch;
+    const reverb = new Tone.Reverb({ decay: 2.6, preDelay: 0.02, wet: 1 });
+    kit.bus("rev", -8, reverb);
+    const delay = new Tone.FeedbackDelay({ delayTime: "8n", feedback: 0.35, wet: 1 });
+    kit.bus("dly", -12, new Tone.Filter(1800, "lowpass"), delay);
+    kit.channel("drums", -6, { rev: -24 }); kit.channel("bass", -7); kit.channel("chop", -9, { rev: -14 }); kit.channel("lead", -15, { rev: -12, dly: -6 }); kit.channel("noise", -22);
+
+    // seeded random so the crackle is the same every play
+    let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+    // chopped "sample": FM keys through a dusty band-limited filter
+    const chopLP = new Tone.Filter(2600, "lowpass", -24);
+    const chopHP = new Tone.Filter(180, "highpass");
+    const chopCrush = kit.shaper(24);
+    const chop = new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 2, modulationIndex: 2.5,
+      oscillator: { type: "triangle" }, modulation: { type: "sine" },
+      envelope: { attack: 0.004, decay: 0.5, sustain: 0.35, release: 0.08 },
+      modulationEnvelope: { attack: 0.002, decay: 0.3, sustain: 0.1, release: 0.1 },
+    });
+    chop.maxPolyphony = 32;
+    const wow = new Tone.Vibrato({ frequency: 0.7, depth: 0.05 });
+    chop.chain(chopHP, chopCrush, chopLP, wow, ch.chop);
+
+    // 808: gliding sine, driven
+    const b808 = new Tone.MonoSynth({
+      oscillator: { type: "sine" }, portamento: 0.06,
+      envelope: { attack: 0.003, decay: 0.8, sustain: 0.55, release: 0.25 },
+      filter: { frequency: 900 }, filterEnvelope: { baseFrequency: 800, octaves: 0 },
+    });
+    const b808Dist = new Tone.Distortion(0.35);
+    b808.chain(b808Dist, ch.bass);
+
+    // drums
+    const drumBus = new Tone.Gain(1);
+    const drumCrush = new Tone.CrossFade(0);
+    const drumShaper = kit.shaper(14);
+    drumBus.connect(drumCrush.a); drumBus.connect(drumShaper); drumShaper.connect(drumCrush.b);
+    const drumLP = new Tone.Filter(20000, "lowpass");
+    drumCrush.chain(drumLP, ch.drums);
+    const kick = new Tone.MembraneSynth({ pitchDecay: 0.03, octaves: 5, envelope: { attack: 0.001, decay: 0.28, sustain: 0 } }).connect(drumBus);
+    const snareN = new Tone.NoiseSynth({ noise: { type: "pink" }, envelope: { attack: 0.001, decay: 0.16, sustain: 0 }, volume: -5 });
+    snareN.chain(new Tone.Filter(2200, "bandpass", -12), drumBus);
+    const snareB = new Tone.MembraneSynth({ pitchDecay: 0.015, octaves: 2, envelope: { attack: 0.001, decay: 0.1, sustain: 0 }, volume: -9 }).connect(drumBus);
+    const rim = new Tone.MetalSynth({ envelope: { attack: 0.001, decay: 0.05, release: 0.02 }, harmonicity: 3.1, modulationIndex: 10, resonance: 2500, octaves: 0.6, volume: -22 });
+    rim.connect(drumBus);
+    const hat = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.03, sustain: 0 }, volume: -18 });
+    hat.chain(new Tone.Filter(9000, "highpass"), drumBus);
+    const ohat = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.002, decay: 0.22, sustain: 0 }, volume: -22 });
+    ohat.chain(new Tone.Filter(7500, "highpass"), drumBus);
+
+    // lead
+    const lead = new Tone.MonoSynth({
+      oscillator: { type: "square" }, portamento: 0.04,
+      envelope: { attack: 0.01, decay: 0.2, sustain: 0.6, release: 0.2 },
+      filter: { type: "lowpass", Q: 2 }, filterEnvelope: { attack: 0.01, decay: 0.3, sustain: 0.4, baseFrequency: 700, octaves: 2.2 },
+    });
+    lead.chain(new Tone.Vibrato({ frequency: 5.5, depth: 0.08 }), ch.lead);
+
+    // vinyl: constant hiss + seeded clicks
+    const hiss = new Tone.Noise("brown");
+    const hissG = new Tone.Gain(0.35);
+    hiss.chain(new Tone.Filter(1200, "highpass"), hissG, ch.noise);
+    const click = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.0005, decay: 0.004, sustain: 0 }, volume: 2 });
+    click.chain(new Tone.Filter(3000, "highpass"), ch.noise);
+
+    const k = (i, s, v = 0.95) => at(T(i, s), t => { kick.triggerAttackRelease("C1", "8n", t, v); flash("drums", t); });
+    const sn = (i, s, v = 0.9) => at(T(i, s) + human(0.006), t => { snareN.triggerAttackRelease("16n", t, v); snareB.triggerAttackRelease("A2", "16n", t, v); });
+    const h = (i, s, v = 0.45) => at(T(i, s) + human(0.006), t => hat.triggerAttackRelease("32n", t, v));
+    const oh = (i, s, v = 0.5) => at(T(i, s), t => ohat.triggerAttackRelease("8n", t, v));
+    const rm = (i, s, v = 0.6) => at(T(i, s), t => rim.triggerAttackRelease("C5", "32n", t, v));
+    const cp = (i, s, voicing, dur, v, shift = 0) => at(T(i, s) + human(0.004), t => {
+      chop.triggerAttackRelease(voicing.map(n => f(m(n) + shift)), D(dur), t, v); flash("chop", t);
+    });
+    const bb = (i, s, midi, dur, v = 0.9) => at(T(i, s), t => { b808.triggerAttackRelease(f(midi), D(dur), t, v); flash("bass", t); });
+
+    BARS.forEach((b, i) => {
+      const { sec, local, chord } = b;
+      const id = sec.id;
+      const v = chord.v, r = chord.root;
+
+      // per-bar state
+      at(T(i, 0), t => {
+        chopLP.frequency.cancelScheduledValues(t);
+        if (id === "intro") chopLP.frequency.linearRampToValueAtTime(600 + 350 * (local + 1), t + BAR);
+        else if (id === "outro") chopLP.frequency.linearRampToValueAtTime(Math.max(400, 2600 - 280 * (local + 1)), t + BAR);
+        else chopLP.frequency.setValueAtTime(id === "switch" ? 4200 : 2600, t);
+        drumCrush.fade.setValueAtTime(id === "switch" ? 0.35 : id === "glitch" ? 0.7 : 0.12, t);
+        drumLP.frequency.setValueAtTime(id === "outro" ? 1200 : 20000, t);
+        hissG.gain.setValueAtTime(id === "switch" ? 0.1 : id === "intro" || id === "outro" ? 0.6 : 0.35, t);
+        if (id !== "switch") chop.set({ envelope: { attack: 0.004 } });   // in case playback jumped out of the switch
+      });
+      // crackle
+      for (let c = 0, n = 3 + Math.floor(rnd() * 4); c < n; c++) {
+        const s = rnd() * 16, v2 = 0.2 + rnd() * 0.6;
+        at(T(i, s), t => click.triggerAttackRelease("64n", t, v2));
+      }
+
+      // ----- chopped sample -----
+      if (id === "intro" || id === "a" || id === "b" || id === "outro") {
+        cp(i, 0, v, 3, 0.7); cp(i, 3, v, 2.5, 0.55); cp(i, 6, v, 2, 0.6); cp(i, 10, v, 3.5, 0.62);
+        cp(i, 14, v, 2, 0.5, -12);                   // the slowed-down last slice
+        if (local % 4 === 3 && id !== "outro") { cp(i, 15, v, 0.5, 0.45); cp(i, 15.5, v, 0.5, 0.5); }
+      } else if (id === "switch") {
+        // swelling pads, reversed-sample feel
+        at(T(i, 0), t => { chop.set({ envelope: { attack: 0.6 } }); chop.triggerAttackRelease(v.map(n => f(m(n) + 12)), D(7), t, 0.45); flash("chop", t); });
+        at(T(i, 8), t => { chop.triggerAttackRelease(v, D(7), t, 0.4); });
+        at(T(i, 15.9), t => chop.set({ envelope: { attack: 0.004 } }));
+      } else if (id === "glitch") {
+        // tape stop: 16th stutters sliding down a half step at a time
+        for (let s = 0; s < 16; s++) {
+          if (local === 3 && s >= 12) break;
+          const shift = -Math.floor((local * 16 + s) / 4);
+          cp(i, s, v, 0.7, 0.35 + 0.02 * (s % 4), Math.max(shift, -14));
+        }
+      }
+
+      // ----- 808 -----
+      if (id === "a" || id === "b") {
+        bb(i, 0, r, 6); bb(i, 7, r, 2.5, 0.7); bb(i, 10, r, 3, 0.8);
+        if (local % 2 === 1) { bb(i, 13, r + 12, 1.2, 0.7); bb(i, 14, r, 2, 0.8); }   // octave hop -> glide
+      } else if (id === "switch") {
+        bb(i, 0, r, 5); bb(i, 5, r + 12, 1.1, 0.7); bb(i, 6, r, 4, 0.85); bb(i, 11, r + 7, 1.5, 0.7); bb(i, 12, r + 5, 3, 0.8);
+      } else if (id === "glitch" && local < 3) {
+        bb(i, 0, r, 3, 0.9); bb(i, 8, r - (local + 1), 3, 0.8);
+      } else if (id === "outro" && local === 7) {
+        bb(i, 0, 29, 12, 0.8);
+      }
+
+      // ----- drums -----
+      if (id === "intro" && local === 3) {
+        sn(i, 12, 0.4); sn(i, 14, 0.6); sn(i, 15, 0.8);
+      } else if (id === "a" || id === "b") {
+        k(i, 0); k(i, 7, 0.6); k(i, 10, 0.85); if (local % 4 === 3) k(i, 15, 0.5);
+        sn(i, 4); sn(i, 12); sn(i, 9, 0.15);
+        for (let s = 0; s < 16; s += 2) h(i, s, s % 4 === 0 ? 0.5 : 0.35);
+        h(i, 7, 0.2); h(i, 11, 0.22);
+        if (id === "b") { rm(i, 6, 0.5); rm(i, 14, 0.4); }
+        if (local % 8 === 7) oh(i, 14, 0.55);
+      } else if (id === "switch") {
+        k(i, 0, 1); k(i, 6, 0.8); if (local % 2) k(i, 11, 0.8);
+        sn(i, 8, 1);
+        for (let s = 0; s < 16; s++) {
+          const roll = (local % 2 === 1 && s >= 12) || (local % 4 === 2 && s >= 6 && s < 8);
+          if (roll) { for (let r3 = 0; r3 < 3; r3++) h(i, s + r3 / 3, 0.25 + 0.1 * r3); }
+          else h(i, s, s % 2 ? 0.3 : 0.5);
+        }
+        if (local === 7) { sn(i, 12, 0.6); sn(i, 13, 0.7); sn(i, 14, 0.8); sn(i, 15, 0.9); }
+      } else if (id === "glitch") {
+        const every = [2, 1, 1, 0.5][local];
+        for (let s = 0; s < 16; s += every) {
+          if (local === 3 && s >= 12) break;            // one beat of silence before beat B
+          if (s % 4 === 0) k(i, s, 0.9); else sn(i, s, 0.3 + (s / 16) * 0.5);
+        }
+      } else if (id === "outro" && local < 4) {
+        k(i, 0, 0.7); sn(i, 12, 0.5);
+        for (let s = 0; s < 16; s += 4) h(i, s, 0.3);
+      }
+
+      // ----- lead (beat B) -----
+      if (id === "b") {
+        const phrase = (local >= 8 ? MEL_HI : MEL)[local % 4];
+        phrase.forEach(([s, n, d]) => at(T(i, s), t => { lead.triggerAttackRelease(n, D(d) * 0.9, t, 0.75); flash("lead", t); }));
+      }
+    });
+
+    hiss.start();
+    return { releaseAll() { chop.releaseAll(); b808.triggerRelease(); lead.triggerRelease(); } };
+  },
+});
+})();
+
+// ===== 04-wangan-line.js =====
+// No.4 湾岸ライン — fusion / city pop, last chorus up a whole step
+(() => {
+const C = {
+  Gmaj9:  { sym: "Gmaj9",    root: 31, v: ["A3", "B3", "D4", "F#4"] },
+  Fsm7:   { sym: "F♯m7",     root: 30, v: ["A3", "C#4", "E4"] },
+  Em9:    { sym: "Em9",      root: 28, v: ["G3", "B3", "D4", "F#4"] },
+  A7sus:  { sym: "A7sus4",   root: 33, v: ["G3", "D4", "E4"] },
+  A7:     { sym: "A7",       root: 33, v: ["G3", "C#4", "E4"] },
+  Bm7:    { sym: "Bm7",      root: 35, v: ["A3", "D4", "F#4"] },
+  E9:     { sym: "E9",       root: 28, v: ["G#3", "D4", "F#4"] },
+  Fs7s9:  { sym: "F♯7(♯9)",  root: 30, v: ["A#3", "E4", "A4"] },
+  Em7:    { sym: "Em7",      root: 28, v: ["G3", "B3", "D4"] },
+  A13:    { sym: "A13",      root: 33, v: ["G3", "C#4", "F#4"] },
+  Dmaj9:  { sym: "Dmaj9",    root: 38, v: ["A3", "C#4", "E4", "F#4"] },
+  A6:     { sym: "A6",       root: 33, v: ["F#3", "A3", "C#4", "E4"] },
+  AonG:   { sym: "A/G",      root: 31, v: ["A3", "C#4", "E4"] },
+};
+// the final chorus: same chords, a whole step up
+const UP_SYM = { Dmaj9: "Emaj9", Bm7: "C♯m7", Gmaj9: "Amaj9", A6: "B6", Fsm7: "G♯m7", Em9: "F♯m9", A7sus: "B7sus4" };
+for (const [k, sym] of Object.entries(UP_SYM)) C[k + "_up"] = { ...C[k], sym, up: 2 };
+
+const VERSE = ["Gmaj9", "Fsm7", "Em9", "A7sus"];
+const PRE = ["Bm7", "E9", "Gmaj9", "Fs7s9", "Bm7", "E9", "Em7", "A13"];
+const CHORUS = ["Dmaj9", "Bm7", "Gmaj9", "A6", "Fsm7", "Bm7", "Em9", "A7sus"];
+const SOLO = ["Gmaj9", "AonG", "Fsm7", "Bm7"];
+const SECTIONS = [
+  { id: "intro",   name: "イントロ",   bars: 4, chords: ["Gmaj9", "AonG", "Fsm7", "Bm7"], intensity: 0.7 },
+  { id: "verse",   name: "Aメロ",      bars: 8, chords: VERSE, intensity: 0.4 },
+  { id: "pre",     name: "Bメロ",      bars: 8, chords: PRE, intensity: 0.55 },
+  { id: "chorus",  name: "サビ",       bars: 8, chords: CHORUS, intensity: 0.9 },
+  { id: "verse2",  name: "Aメロ2",     bars: 8, chords: VERSE, intensity: 0.45 },
+  { id: "solo",    name: "ギターソロ", bars: 8, chords: SOLO, intensity: 1 },
+  { id: "slap",    name: "ベース",     bars: 4, chords: ["Em7", "A7"], intensity: 0.5 },
+  { id: "chorus2", name: "サビ",       bars: 8, chords: CHORUS, intensity: 0.9 },
+  { id: "chorus3", name: "転調サビ",   bars: 8, chords: CHORUS.map(c => c + "_up"), intensity: 1 },
+  { id: "outro",   name: "アウトロ",   bars: 4, chords: ["Gmaj9_up", "A7sus_up", "Dmaj9_up", "Dmaj9_up"], intensity: 0.6 },
+];
+
+// melodies: [step, note, durSteps, bendFromSemitones?]
+const VERSE_MEL = [
+  [[4, "B4", 2], [6, "D5", 2], [8, "F#5", 4], [12, "E5", 4]],
+  [[0, "C#5", 6], [8, "A4", 2], [10, "C#5", 2], [12, "E5", 4]],
+  [[4, "G4", 2], [6, "B4", 2], [8, "D5", 4], [12, "E5", 2], [14, "F#5", 2]],
+  [[0, "E5", 8], [12, "A4", 4]],
+];
+const VERSE_END = [[0, "E5", 4], [4, "F#5", 4], [8, "G5", 4], [12, "A5", 4]];
+const PRE_MEL = [
+  [[0, "F#5", 4], [4, "D5", 4], [8, "B4", 8]],
+  [[0, "G#5", 4], [4, "F#5", 4], [8, "D5", 8]],
+  [[0, "F#5", 4], [4, "E5", 4], [8, "D5", 4], [12, "B4", 4]],
+  [[0, "A#4", 8], [8, "C#5", 8]],
+  [[0, "F#5", 4], [4, "D5", 4], [8, "B4", 8]],
+  [[0, "G#5", 4], [4, "F#5", 4], [8, "D5", 8]],
+  [[0, "E5", 4], [4, "F#5", 4], [8, "G5", 4], [12, "B5", 4]],
+  [[0, "A5", 14, 2]],
+];
+const CHORUS_MEL = [
+  [[0, "F#5", 2], [2, "A5", 2], [4, "B5", 4, 2], [8, "A5", 2], [10, "F#5", 2], [12, "E5", 4]],
+  [[0, "D5", 3], [3, "F#5", 3], [6, "E5", 2], [8, "D5", 4], [12, "B4", 4]],
+  [[0, "B4", 2], [2, "D5", 2], [4, "F#5", 4], [8, "A5", 4, 1], [12, "G5", 4]],
+  [[0, "F#5", 6], [6, "E5", 2], [8, "C#5", 4], [12, "E5", 4]],
+  [[0, "C#5", 2], [2, "E5", 2], [4, "A5", 4, 2], [8, "F#5", 4], [12, "E5", 4]],
+  [[0, "D5", 3], [3, "F#5", 3], [6, "A5", 2], [8, "B5", 6, 2], [14, "A5", 2]],
+  [[0, "G5", 4], [4, "F#5", 2], [6, "E5", 2], [8, "D5", 2], [10, "E5", 2], [12, "F#5", 4]],
+  [[0, "E5", 8, 2], [8, "A4", 2], [10, "C#5", 2], [12, "E5", 2], [14, "G5", 2]],
+];
+const PENTA = ["D", "E", "F#", "A", "B"];
+const penta = (from, count, dir) => {             // run through D major pentatonic
+  const all = [];
+  for (let o = 3; o <= 6; o++) for (const n of PENTA) all.push(n + o);
+  let i = all.indexOf(from); const out = [];
+  for (let c = 0; c < count; c++) { out.push(all[i]); i += dir; }
+  return out;
+};
+const SOLO_MEL = [
+  [[0, "A5", 4, 2], [4, "B5", 2], [6, "A5", 2], [8, "F#5", 4], [12, "E5", 4]],
+  [[0, "D5", 2], [2, "E5", 2], [4, "F#5", 2], [6, "A5", 2], [8, "B5", 2], [10, "D6", 2], [12, "E6", 4, 2]],
+  [[0, "C#6", 4], [4, "A5", 2], [6, "F#5", 2], [8, "E5", 2], [10, "C#5", 2], [12, "A4", 4]],
+  [[0, "B4", 2], [2, "D5", 2], [4, "F#5", 4], [8, "B5", 8, 2]],
+  penta("D6", 16, -1).map((n, k) => [k, n, 1]),
+  penta("A4", 16, 1).map((n, k) => [k, n, 1]),
+  [[0, "A5", 1], [1, "B5", 1], [2, "D6", 2], [4, "A5", 1], [5, "B5", 1], [6, "D6", 2], [8, "B5", 1], [9, "D6", 1], [10, "E6", 2], [12, "B5", 1], [13, "D6", 1], [14, "E6", 2]],
+  [[0, "F#6", 8, 2], [8, "E6", 2], [10, "D6", 2], [12, "B5", 4]],
+];
+
+SONGS.push({
+  id: "wangan-line", no: 4, title: "湾岸ライン", date: "2026-09-26",
+  bpm: 116, swing: 0.08, key: "D メジャー → E メジャー", genre: "フュージョン／シティポップ", tail: 4,
+  masterGain: 0.8, comp: { threshold: -18, ratio: 3, attack: 0.008, release: 0.2 },
+  accent: { light: "#1d8a55", dark: "#58c987" },
+  blurb: "夜の首都高を想定した、明るくて速いフュージョンです。クラビネット風のカッティングとスラップ風のベースの上で、ギター風のリードが歌います。最後のサビで全音上がります。",
+  parts: [["drums", "ドラム"], ["bass", "スラップベース"], ["keys", "クラビ・エレピ"], ["brass", "ブラス"], ["lead", "ギター・リード"]],
+  why: [
+    ["ギター風のリード", "チョーキング", "歪ませたノコギリ波に、全音下から持ち上げるチョーキングを入れています。ソロの後半はペンタトニックを16分で駆け上がり、駆け下ります。", [["高中正義", 6], ["Stevie Wonder", 16]]],
+    ["スラップ風ベース", "親指と、はじく音", "ルートを親指で叩く音と、1オクターブ上をはじく音を交互に入れています。ソロの後の4小節はベースとドラムだけです。", [["Vulfpeck", 13], ["Thundercat", 7]]],
+    ["カッティング", "クラビネット風", "フィルタが開いて閉じる短い和音を、16分の裏に散らして刻んでいます。", [["Vulfpeck", 13], ["Jamiroquai", 6], ["Stevie Wonder", 16]]],
+    ["コード進行", "王道進行とセカンダリードミナント", "ソロは Gmaj9 → A/G → F♯m7 → Bm7 の、J-POPでおなじみの進行です。BメロはE9やF♯7(♯9)を挟んで、サビへの期待を高めています。", [["KIRINJI", 7], ["星野源", 63]]],
+    ["ブラス", "合いの手", "イントロとサビの終わりに、短い和音のブラスを差し込んでいます。", [["Jamiroquai", 6], ["Michael Jackson", 8]]],
+    ["転調", "最後のサビを全音上へ", "最後の8小節で D から E へ上がり、そのままアウトロで終わります。", [["星野源", 63]]],
+  ],
+  chords: C,
+  sections: SECTIONS,
+  build(transport, kit) {
+    const { T, D, m, f, BAR, BARS, at, flash, human } = kit;
+    const ch = kit.ch;
+    const reverb = new Tone.Reverb({ decay: 2.2, preDelay: 0.015, wet: 1 });
+    kit.bus("rev", -9, reverb);
+    const delay = new Tone.FeedbackDelay({ delayTime: "8n.", feedback: 0.28, wet: 1 });
+    kit.bus("dly", -12, new Tone.Filter(3000, "lowpass"), delay);
+    kit.channel("drums", -7, { rev: -22 }); kit.channel("bass", -8); kit.channel("keys", -12, { rev: -14 }); kit.channel("brass", -13, { rev: -10 }); kit.channel("lead", -12, { rev: -14, dly: -9 });
+
+    // clav: plucky filtered pulse
+    const clav = new Tone.PolySynth(Tone.MonoSynth, {
+      oscillator: { type: "pulse", width: 0.3 },
+      envelope: { attack: 0.002, decay: 0.12, sustain: 0.05, release: 0.05 },
+      filter: { type: "bandpass", Q: 4 }, filterEnvelope: { attack: 0.002, decay: 0.09, sustain: 0.1, release: 0.05, baseFrequency: 500, octaves: 3 },
+    });
+    clav.maxPolyphony = 24;
+    clav.connect(ch.keys);
+    // EP pad for verses
+    const ep = new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 1, modulationIndex: 3,
+      envelope: { attack: 0.004, decay: 1.4, sustain: 0.3, release: 0.9 },
+      modulationEnvelope: { attack: 0.002, decay: 0.3, sustain: 0.1, release: 0.5 },
+      volume: -4,
+    });
+    ep.maxPolyphony = 16;
+    ep.chain(new Tone.Tremolo({ frequency: 4, depth: 0.3 }).start(), ch.keys);
+
+    // slap bass
+    const bass = new Tone.MonoSynth({
+      oscillator: { type: "fatsawtooth", count: 2, spread: 10 },
+      envelope: { attack: 0.002, decay: 0.18, sustain: 0.4, release: 0.06 },
+      filter: { type: "lowpass", Q: 5, rolloff: -24 },
+      filterEnvelope: { attack: 0.001, decay: 0.1, sustain: 0.2, release: 0.1, baseFrequency: 160, octaves: 4 },
+    });
+    const sub = new Tone.MonoSynth({ oscillator: { type: "sine" }, envelope: { attack: 0.003, decay: 0.2, sustain: 0.7, release: 0.06 }, filterEnvelope: { baseFrequency: 300, octaves: 0 }, volume: -6 });
+    bass.connect(ch.bass); sub.connect(ch.bass);
+
+    // brass stabs
+    const brass = new Tone.PolySynth(Tone.MonoSynth, {
+      oscillator: { type: "fatsawtooth", count: 3, spread: 16 },
+      envelope: { attack: 0.03, decay: 0.2, sustain: 0.6, release: 0.12 },
+      filter: { type: "lowpass", Q: 1 }, filterEnvelope: { attack: 0.04, decay: 0.2, sustain: 0.5, baseFrequency: 700, octaves: 2.5 },
+    });
+    brass.maxPolyphony = 16;
+    brass.connect(ch.brass);
+
+    // guitar-ish lead
+    const lead = new Tone.MonoSynth({
+      oscillator: { type: "fatsawtooth", count: 2, spread: 8 }, portamento: 0.025,
+      envelope: { attack: 0.006, decay: 0.3, sustain: 0.7, release: 0.18 },
+      filter: { type: "lowpass", Q: 1.5 }, filterEnvelope: { attack: 0.01, decay: 0.25, sustain: 0.6, baseFrequency: 1100, octaves: 2 },
+    });
+    const leadVib = new Tone.Vibrato({ frequency: 5.8, depth: 0.04 });
+    lead.chain(new Tone.Distortion(0.45), new Tone.Chorus({ frequency: 1.2, delayTime: 3, depth: 0.4, wet: 0.3 }).start(), leadVib, new Tone.Filter(4200, "lowpass"), ch.lead);
+
+    // drums
+    const drumBus = new Tone.Gain(1).connect(ch.drums);
+    const kick = new Tone.MembraneSynth({ pitchDecay: 0.03, octaves: 5, envelope: { attack: 0.001, decay: 0.3, sustain: 0 } }).connect(drumBus);
+    const snareN = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.14, sustain: 0 }, volume: -7 });
+    snareN.chain(new Tone.Filter(2500, "bandpass", -12), drumBus);
+    const snareB = new Tone.MembraneSynth({ pitchDecay: 0.015, octaves: 2, envelope: { attack: 0.001, decay: 0.1, sustain: 0 }, volume: -9 }).connect(drumBus);
+    const hat = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.03, sustain: 0 }, volume: -18 });
+    hat.chain(new Tone.Filter(9000, "highpass"), drumBus);
+    const ohat = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.002, decay: 0.18, sustain: 0 }, volume: -21 });
+    ohat.chain(new Tone.Filter(8000, "highpass"), drumBus);
+    const clap = new Tone.NoiseSynth({ noise: { type: "pink" }, envelope: { attack: 0.003, decay: 0.1, sustain: 0 }, volume: -12 });
+    clap.chain(new Tone.Filter(1300, "bandpass"), drumBus);
+    const crash = new Tone.MetalSynth({ envelope: { attack: 0.001, decay: 1.3, release: 0.4 }, harmonicity: 5.1, modulationIndex: 30, resonance: 4200, octaves: 1.5, volume: -28 });
+    crash.connect(drumBus);
+
+    const tr = (n, up) => (up ? f(m(n) + up) : n);
+    const leadNote = (i, s, n, d, bend, up) => at(T(i, s), t => {
+      const note = tr(n, up);
+      lead.triggerAttackRelease(note, D(d) * 0.94, t, 0.8); flash("lead", t);
+      if (bend) {
+        const target = Tone.Frequency(note).toFrequency();
+        const from = Tone.Frequency(m(note) - bend, "midi").toFrequency();
+        lead.frequency.cancelScheduledValues(t);           // replace the trigger's own glide with the bend
+        lead.frequency.setValueAtTime(from, t);
+        lead.frequency.exponentialRampToValueAtTime(target, t + Math.min(0.14, D(d) * 0.4));
+      }
+    });
+    const phrase = (i, list, up = 0) => list.forEach(([s, n, d, bend]) => leadNote(i, s, n, d, bend, up));
+
+    BARS.forEach((b, i) => {
+      const { sec, local, chord } = b;
+      const id = sec.id;
+      const up = chord.up || 0;
+      const v = chord.v.map(n => tr(n, up));
+      const r = chord.root + up;
+      const next = BARS[i + 1]?.chord || chord;
+      const nextR = next.root + (next.up || 0);
+      const isChorus = id === "chorus" || id === "chorus2" || id === "chorus3";
+
+      // ----- keys -----
+      const cl = (s, dur = 0.6, vel = 0.6) => at(T(i, s) + human(0.004), t => { clav.triggerAttackRelease(v.map(n => f(m(n) + 12)), D(dur), t, vel); flash("keys", t); });
+      if (id === "verse" || id === "verse2") {
+        at(T(i, 0), t => { ep.triggerAttackRelease(v, D(7), t, 0.5); flash("keys", t); });
+        at(T(i, 10), t => ep.triggerAttackRelease(v, D(5), t, 0.35));
+        if (id === "verse2") [3, 6, 11, 14].forEach(s => cl(s, 0.5, 0.45));
+      } else if (id === "pre") {
+        [0, 3, 6, 8, 11, 14].forEach(s => cl(s, 0.6, s % 4 === 0 ? 0.65 : 0.5));
+      } else if (isChorus || id === "solo" || id === "intro") {
+        [0, 3, 6, 8, 10, 11, 14].forEach(s => cl(s, 0.5, s % 4 === 0 ? 0.7 : 0.5));
+        if (isChorus) at(T(i, 0), t => ep.triggerAttackRelease(v, D(14), t, 0.3));
+      } else if (id === "outro") {
+        at(T(i, 0), t => { ep.triggerAttackRelease(v, D(local === 3 ? 20 : 14), t, 0.45); flash("keys", t); });
+      }
+
+      // ----- bass -----
+      const bn = (s, midi, dur, vel, pop = false) => at(T(i, s) + human(0.003), t => {
+        bass.triggerAttackRelease(f(midi), D(dur), t, pop ? Math.min(1, vel + 0.2) : vel);
+        if (!pop) sub.triggerAttackRelease(f(midi), D(dur), t, vel * 0.8);
+        flash("bass", t);
+      });
+      let appr = nextR - 1; if (Math.abs(appr - r) > 7) appr += appr > r ? -12 : 12;
+      if (id === "intro" || id === "verse" || id === "verse2") {
+        bn(0, r, 3, 0.9); bn(6, r, 1, 0.6); bn(7, r + 7, 1, 0.55); bn(8, r + 12, 2, 0.7, true); bn(11, r, 2, 0.7); bn(14, r + 10, 1, 0.5); bn(15, appr, 1, 0.7);
+      } else if (id === "slap") {
+        // solo slap break: thumb / pop / ghost
+        const pat = [[0, 0, 1, 1], [2, 12, 1, 0.8, 1], [3, 0, 1, 0.35], [4, 10, 1, 0.7, 1], [5, 0, 1, 0.35], [6, 12, 1, 0.85, 1], [7, 7, 1, 0.6], [8, 0, 1, 0.9], [9, 0, 1, 0.35], [10, 12, 1, 0.8, 1], [11, 10, 1, 0.6, 1], [12, 7, 1, 0.7], [13, 5, 1, 0.6], [14, 3, 1, 0.65], [15, 2, 1, 0.7]];
+        pat.forEach(([s, iv, d, vel, pop]) => bn(s, r + iv, d, vel, !!pop));
+      } else if (id !== "outro") {
+        bn(0, r, 2, 0.95); bn(2, r + 12, 1, 0.7, true); bn(3, r, 1, 0.4); bn(6, r, 1, 0.7); bn(7, r + 12, 1, 0.65, true);
+        bn(8, r, 2, 0.85); bn(10, r + 12, 1, 0.7, true); bn(11, r + 7, 1, 0.55); bn(12, r + 10, 1, 0.6); bn(14, r + 12, 1, 0.65, true); bn(15, appr, 1, 0.75);
+      } else {
+        bn(0, r, local === 3 ? 20 : 14, 0.85);
+      }
+
+      // ----- brass -----
+      const br = (s, dur, vel = 0.7) => at(T(i, s), t => { brass.triggerAttackRelease(v.map(n => f(m(n) + 12)), D(dur), t, vel); flash("brass", t); });
+      if (id === "intro") { br(0, 2); br(3, 1, 0.6); br(6, 2); if (local === 3) { br(10, 1); br(12, 3, 0.85); } }
+      if (isChorus && local === 7) { br(8, 1.5); br(10, 1.5); br(12, 3, 0.85); }
+      if (id === "pre" && local === 3) { br(0, 6, 0.55); }
+      if (id === "outro" && local === 2) { br(0, 2); br(3, 1, 0.6); br(6, 10, 0.8); }
+
+      // ----- drums -----
+      const k = (s, vv = 0.95) => at(T(i, s), t => { kick.triggerAttackRelease("C1", "8n", t, vv); flash("drums", t); });
+      const sn = (s, vv = 0.9) => at(T(i, s) + human(0.004), t => { snareN.triggerAttackRelease("16n", t, vv); snareB.triggerAttackRelease("B2", "16n", t, vv); });
+      const h = (s, vv = 0.45) => at(T(i, s) + human(0.004), t => hat.triggerAttackRelease("32n", t, vv));
+      const oh = (s, vv = 0.5) => at(T(i, s), t => ohat.triggerAttackRelease("16n", t, vv));
+      const cp = (s, vv = 0.7) => at(T(i, s) + 0.006, t => clap.triggerAttackRelease("16n", t, vv));
+      const cr = () => at(T(i, 0), t => crash.triggerAttackRelease("C4", "1n", t, 0.7));
+      const fill = () => { sn(12, 0.6); sn(13, 0.7); sn(14, 0.85); sn(15, 1); };
+      if (id === "intro") {
+        if (local === 0) cr();
+        k(0); k(8); sn(4); sn(12); for (let s = 0; s < 16; s += 2) h(s, 0.45);
+        if (local === 3) fill();
+      } else if (id === "verse" || id === "verse2") {
+        if (local === 0) cr();
+        k(0); k(10, 0.8); sn(4); sn(12); sn(7, 0.15); sn(15, 0.12);
+        for (let s = 0; s < 16; s++) h(s, s % 2 ? 0.25 : 0.45);
+        if (local === 7) fill();
+      } else if (id === "pre") {
+        k(0); k(8); k(10, 0.6); sn(4); sn(12);
+        for (let s = 0; s < 16; s += 2) h(s, 0.5); [2, 6, 10, 14].forEach(s => oh(s, 0.35));
+        if (local === 7) { sn(8, 0.5); sn(10, 0.6); fill(); }
+      } else if (isChorus || id === "solo") {
+        if (local === 0 || local === 4) cr();
+        [0, 4, 8, 12].forEach(s => k(s)); sn(4); sn(12); cp(4); cp(12);
+        for (let s = 0; s < 16; s++) if (s % 4 !== 2) h(s, s % 2 ? 0.3 : 0.5);
+        [2, 6, 10, 14].forEach(s => oh(s, 0.5));
+        if (local === 7 && id !== "chorus3") fill();
+      } else if (id === "slap") {
+        k(0); k(8); cp(4, 0.8); cp(12, 0.8);
+        for (let s = 0; s < 16; s += 2) h(s, 0.4);
+        if (local === 3) { k(12); fill(); }
+      } else if (id === "outro") {
+        if (local === 0 || local === 3) cr();
+        if (local < 3) { [0, 4, 8, 12].forEach(s => k(s, 0.85)); sn(4); sn(12); for (let s = 0; s < 16; s += 2) h(s, 0.4); }
+        else { k(0, 1); }
+      }
+
+      // ----- lead -----
+      if (id === "verse" || id === "verse2") phrase(i, local === 7 ? VERSE_END : VERSE_MEL[local % 4]);
+      else if (id === "pre") phrase(i, PRE_MEL[local]);
+      else if (isChorus) phrase(i, CHORUS_MEL[local], up);
+      else if (id === "solo") phrase(i, SOLO_MEL[local]);
+      else if (id === "outro" && local === 2) phrase(i, [[0, "E5", 2], [2, "F#5", 2], [4, "A5", 2], [6, "B5", 2], [8, "C#6", 8, 2]], 2);
+      else if (id === "outro" && local === 3) phrase(i, [[0, "D6", 16, 1]], 2);
+    });
+
+    return { releaseAll() { clav.releaseAll(); ep.releaseAll(); brass.releaseAll(); [bass, sub, lead].forEach(s => s.triggerRelease()); } };
+  },
+});
+})();
+
+// ===== 05-zankyo.js =====
+// No.5 残響 — dark ambient ballad: sparse piano, sudden sub, one distorted swell
+(() => {
+const C = {
+  Cm9:    { sym: "Cm9",         root: 36, v: ["Eb3", "G3", "Bb3", "D4"] },
+  Abmaj7: { sym: "A♭maj7",      root: 32, v: ["Ab3", "C4", "Eb4", "G4"] },
+  EbG:    { sym: "E♭maj7/G",    root: 31, v: ["Bb3", "D4", "Eb4", "G4"] },
+  Fm9:    { sym: "Fm9",         root: 29, v: ["Ab3", "C4", "Eb4", "G4"] },
+  Abadd9: { sym: "A♭(add9)",    root: 32, v: ["Bb3", "C4", "Eb4", "Ab4"] },
+  CmEb:   { sym: "Cm/E♭",       root: 39, v: ["G3", "C4", "Eb4"] },
+  G7sus:  { sym: "G7sus4",      root: 31, v: ["F3", "C4", "D4"] },
+  G7b9:   { sym: "G7(♭9)",      root: 31, v: ["F3", "B3", "D4", "Ab4"] },
+  Cm:     { sym: "Cm",          root: 36, v: ["C4", "Eb4", "G4"] },
+};
+const CYCLE = ["Cm9", "Abmaj7", "EbG", "Fm9"];
+const CLIMAX = ["Abadd9", "Fm9", "CmEb", "G7sus", "Abadd9", "Fm9", "CmEb", "G7b9"];
+const SECTIONS = [
+  { id: "intro",   name: "イントロ", bars: 4, chords: CYCLE, intensity: 0.15 },
+  { id: "verse",   name: "ヴァース", bars: 8, chords: CYCLE, intensity: 0.35 },
+  { id: "drop",    name: "低音",     bars: 8, chords: CYCLE, intensity: 0.65 },
+  { id: "inter",   name: "間奏",     bars: 4, chords: ["Abmaj7", "Fm9", "Abmaj7", "G7sus"], intensity: 0.25 },
+  { id: "climax",  name: "歪み",     bars: 8, chords: CLIMAX, intensity: 1 },
+  { id: "outro",   name: "アウトロ", bars: 6, chords: ["Cm9", "Abmaj7", "EbG", "Fm9", "Cm", "Cm"], intensity: 0.15 },
+];
+// piano right hand (original): [step, note, durSteps]
+const INTRO_MEL = [[[4, "G5", 6], [12, "D5", 4]], [[8, "Eb5", 8]], [[4, "C5", 12]], [[0, "Bb4", 6], [8, "G4", 8]]];
+const VERSE_MEL = [
+  [[8, "G4", 4], [12, "Bb4", 4]],
+  [[0, "C5", 8], [10, "Bb4", 2], [12, "G4", 4]],
+  [[4, "Bb4", 4], [8, "D5", 8]],
+  [[0, "C5", 6], [8, "Ab4", 8]],
+  [[8, "G4", 4], [12, "Eb5", 4]],
+  [[0, "D5", 8], [8, "C5", 4], [12, "Bb4", 4]],
+  [[4, "G4", 4], [8, "Bb4", 4], [12, "Eb5", 4]],
+  [[0, "D5", 16]],
+];
+const CLIMAX_MEL = [
+  [[0, "Eb5", 4], [4, "C5", 4], [8, "Bb4", 8]],
+  [[0, "Ab4", 4], [4, "C5", 4], [8, "Eb5", 8]],
+  [[0, "G5", 8], [8, "F5", 4], [12, "Eb5", 4]],
+  [[0, "D5", 16]],
+  [[0, "Eb5", 4], [4, "F5", 4], [8, "G5", 8]],
+  [[0, "Ab5", 8], [8, "G5", 4], [12, "F5", 4]],
+  [[0, "Eb5", 8], [8, "D5", 4], [12, "C5", 4]],
+  [[0, "B4", 8], [8, "D5", 8]],
+];
+
+SONGS.push({
+  id: "zankyo", no: 5, title: "残響", date: "2026-09-26",
+  bpm: 68, swing: 0, key: "C マイナー", genre: "アンビエント／バラード", tail: 7,
+  masterGain: 0.85, comp: { threshold: -22, ratio: 2.5, attack: 0.02, release: 0.3 },
+  accent: { light: "#5b4fc4", dark: "#a99cf0" },
+  blurb: "間の多いピアノと長い残響から始まり、途中で急に深い低音が入ってきます。後半で一度だけ全体を大きく歪ませ、最後はまたピアノだけに戻って消えていきます。静かな場所で、少し大きめの音量で聴いてください。",
+  parts: [["piano", "ピアノ"], ["voice", "声のようなパッド"], ["sub", "サブベース"], ["drums", "キック・スネア"], ["noise", "テープノイズ"]],
+  why: [
+    ["急に落ちる低音", "1オクターブ上から滑り落ちるサブ", "「低音」の頭で、サブベースが1オクターブ上から滑り落ちて入ってきます。それまで低い音をほとんど鳴らさないのは、この落差を作るためです。", [["James Blake", 8]]],
+    ["間の多いピアノ", "テープのゆらぎ", "ピアノには、ごくわずかに音程を揺らすビブラートをかけ、古いテープで再生しているような不安定さを出しています。残響は8秒近くあります。", [["Radiohead", 10], ["Nine Inch Nails", 40]]],
+    ["声のようなパッド", "母音に近い帯域", "人の声の帯域に寄せたパッドを長く伸ばし、「低音」では短く刻んで、切り刻んだ声のように使います。", [["James Blake", 8], ["宇多田ヒカル", 14]]],
+    ["心音のキック", "ドッ、ドッ", "ヴァースは2つ続く柔らかいキックだけで、脈のように鳴らしています。スネアは3拍目に1発だけで、大きな残響をつけています。", [["James Blake", 8]]],
+    ["一度だけの歪み", "Ab(add9) → G7(♭9)", "後半の8小節だけ、サブ、パッド、スネアを強く歪ませて削ります。「断線」や「17時のシグナル」のブリッジと同じ系統の音です。", [["Nine Inch Nails", 40], ["Radiohead", 10]]],
+    ["コード", "Cm9 → A♭maj7 → E♭maj7/G → Fm9", "上の声部がほとんど動かず、ベースだけが下りていく循環です。", [["Radiohead", 10], ["Aimer", 9]]],
+  ],
+  chords: C,
+  sections: SECTIONS,
+  build(transport, kit) {
+    const { T, D, m, f, BAR, BARS, at, flash, human } = kit;
+    const ch = kit.ch;
+    const reverb = new Tone.Reverb({ decay: 7.5, preDelay: 0.04, wet: 1 });
+    kit.bus("rev", -4, new Tone.Filter(5000, "lowpass"), reverb);
+    kit.channel("piano", -8, { rev: -3 }); kit.channel("voice", -16, { rev: -2 }); kit.channel("sub", -7); kit.channel("drums", -10, { rev: -6 }); kit.channel("noise", -24, { rev: -12 });
+
+    // piano with tape wobble
+    const piano = new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 2, modulationIndex: 1.1,
+      oscillator: { type: "triangle" }, modulation: { type: "sine" },
+      envelope: { attack: 0.003, decay: 3.2, sustain: 0.06, release: 2.4 },
+      modulationEnvelope: { attack: 0.002, decay: 0.3, sustain: 0, release: 0.3 },
+    });
+    piano.maxPolyphony = 24;
+    const pianoWow = new Tone.Vibrato({ frequency: 0.45, depth: 0.035 });
+    const pianoDist = new Tone.Distortion({ distortion: 0.5, wet: 0 });
+    piano.chain(pianoWow, pianoDist, new Tone.Filter(4200, "lowpass"), ch.piano);
+
+    // voice-like pad: detuned saws through two formant-ish bands
+    const voice = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "fatsawtooth", count: 3, spread: 22 }, envelope: { attack: 1.2, decay: 0.5, sustain: 0.8, release: 3 } });
+    voice.maxPolyphony = 24;
+    const f1 = new Tone.Filter({ type: "bandpass", frequency: 700, Q: 3 });
+    const f2 = new Tone.Filter({ type: "bandpass", frequency: 1150, Q: 4 });
+    const voiceSum = new Tone.Gain(1.6);
+    const voiceDist = new Tone.Distortion({ distortion: 0.8, wet: 0 });
+    voice.connect(f1); voice.connect(f2); f1.connect(voiceSum); f2.connect(voiceSum);
+    voiceSum.chain(new Tone.Vibrato({ frequency: 4.6, depth: 0.05 }), voiceDist, ch.voice);
+    const chopVoice = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "fatsawtooth", count: 2, spread: 14 }, envelope: { attack: 0.01, decay: 0.15, sustain: 0.3, release: 0.25 } });
+    chopVoice.maxPolyphony = 12;
+    chopVoice.connect(f1); chopVoice.connect(f2);
+
+    // sub bass
+    const sub = new Tone.MonoSynth({
+      oscillator: { type: "sine" }, portamento: 0.35,
+      envelope: { attack: 0.02, decay: 0.6, sustain: 0.85, release: 1.2 },
+      filterEnvelope: { baseFrequency: 400, octaves: 0 },
+    });
+    const subDist = new Tone.Distortion({ distortion: 0.9, wet: 0 });
+    sub.chain(subDist, new Tone.Filter(900, "lowpass"), ch.sub);
+
+    // heartbeat kick + one big snare
+    const drumXf = new Tone.CrossFade(0);
+    const drumShaper = kit.shaper(8);
+    const drumBus = new Tone.Gain(1);
+    drumBus.connect(drumXf.a); drumBus.connect(drumShaper); drumShaper.connect(drumXf.b);
+    drumXf.connect(ch.drums);
+    const kick = new Tone.MembraneSynth({ pitchDecay: 0.06, octaves: 4, envelope: { attack: 0.002, decay: 0.45, sustain: 0 } }).connect(drumBus);
+    const snareN = new Tone.NoiseSynth({ noise: { type: "pink" }, envelope: { attack: 0.002, decay: 0.3, sustain: 0 }, volume: -4 });
+    snareN.chain(new Tone.Filter(1800, "bandpass", -12), drumBus);
+    const snareB = new Tone.MembraneSynth({ pitchDecay: 0.02, octaves: 2, envelope: { attack: 0.001, decay: 0.2, sustain: 0 }, volume: -8 }).connect(drumBus);
+
+    // tape noise
+    const tape = new Tone.Noise("brown");
+    const tapeG = new Tone.Gain(0.5);
+    tape.chain(new Tone.Filter(350, "highpass"), new Tone.Filter(3500, "lowpass"), tapeG, ch.noise);
+
+    const pn = (i, s, notes, dur, vel) => at(T(i, s) + human(0.01), t => { piano.triggerAttackRelease(notes, D(dur), t, vel); flash("piano", t); });
+    const mel = (i, list, vel = 0.42, oct = 0) => list.forEach(([s, n, d]) => pn(i, s, oct ? f(m(n) + oct) : n, d, vel));
+
+    BARS.forEach((b, i) => {
+      const { sec, local, chord } = b;
+      const id = sec.id;
+      const v = chord.v, r = chord.root;
+      const climax = id === "climax";
+
+      // per-bar state
+      at(T(i, 0), t => {
+        subDist.wet.setValueAtTime(climax ? 0.7 : 0, t);
+        voiceDist.wet.setValueAtTime(climax ? 0.6 : 0, t);
+        pianoDist.wet.setValueAtTime(climax && local >= 4 ? 0.25 : 0, t);
+        drumXf.fade.setValueAtTime(climax ? 0.75 : 0, t);
+        f1.frequency.setValueAtTime(id === "drop" ? 600 : 700, t);
+        tapeG.gain.cancelScheduledValues(t);
+        if (id === "outro") { tapeG.gain.setValueAtTime(0.6 * (1 - local / 6), t); tapeG.gain.linearRampToValueAtTime(0.6 * (1 - (local + 1) / 6), t + BAR); }
+        else tapeG.gain.setValueAtTime(id === "intro" ? 0.7 : climax ? 0.3 : 0.45, t);
+      });
+
+      // ----- piano -----
+      const low = f(r + 12);
+      if (id === "intro") {
+        mel(i, INTRO_MEL[local], 0.38);
+      } else if (id === "verse") {
+        pn(i, 0, low, 14, 0.4); pn(i, 4, v, 10, 0.3);
+        mel(i, VERSE_MEL[local]);
+      } else if (id === "drop") {
+        pn(i, 0, [low, ...v], 14, 0.38);
+        mel(i, VERSE_MEL[local], 0.36, 12);
+      } else if (id === "inter") {
+        pn(i, 0, v, 16, 0.3);
+        if (local % 2 === 0) pn(i, 8, f(m(v[v.length - 1]) + 12), 8, 0.3);
+      } else if (climax) {
+        for (let s = 0; s < 16; s += 4) pn(i, s, [low, ...v], 4, s === 0 ? 0.55 : 0.38);
+        mel(i, CLIMAX_MEL[local], 0.55, 12);
+      } else if (id === "outro") {
+        if (local < 4) { pn(i, 0, v, 14, 0.3); mel(i, VERSE_MEL[local + 4], 0.3); }
+        else if (local === 4) { pn(i, 0, [f(r), ...v], 28, 0.32); pn(i, 8, "G5", 20, 0.22); }
+      }
+
+      // ----- voice pad -----
+      if (id === "verse" || id === "drop" || id === "inter" || climax || (id === "outro" && local < 4)) {
+        at(T(i, 0), t => { voice.triggerAttackRelease(v.map(n => f(m(n) + 12)), D(15), t, climax ? 0.6 : 0.35); flash("voice", t); });
+      }
+      if (id === "drop" || climax) {
+        const top = m(v[v.length - 1]) + 24;
+        [[6, 0], [7, 0], [14, -2], [15, -5]].forEach(([s, iv]) => at(T(i, s), t => { chopVoice.triggerAttackRelease(f(top + iv), D(0.7), t, 0.5); flash("voice", t); }));
+      }
+
+      // ----- sub -----
+      if (id === "drop" || climax) {
+        if ((id === "drop" && local === 0) || (climax && local === 0)) {
+          // the drop: start an octave up and slide down
+          at(T(i, 0), t => { sub.triggerAttack(f(r + 12), t, 1); sub.setNote(f(r), t + 0.05); sub.triggerRelease(t + D(15)); flash("sub", t); });
+        } else {
+          at(T(i, 0), t => { sub.triggerAttackRelease(f(r), D(15), t, 0.9); flash("sub", t); });
+        }
+      } else if (id === "outro" && local === 4) {
+        at(T(i, 0), t => { sub.triggerAttackRelease(f(r), D(28), t, 0.8); flash("sub", t); });
+      }
+
+      // ----- drums -----
+      const k = (s, vel) => at(T(i, s), t => { kick.triggerAttackRelease("F1", "8n", t, vel); flash("drums", t); });
+      const sn = (s, vel) => at(T(i, s), t => { snareN.triggerAttackRelease("8n", t, vel); snareB.triggerAttackRelease("G2", "8n", t, vel); });
+      if (id === "verse" || id === "inter") { k(0, 0.55); k(3, 0.35); }
+      else if (id === "drop") { k(0, 0.7); k(3, 0.45); sn(8, 0.8); if (local % 4 === 3) k(11, 0.4); }
+      else if (climax) { k(0, 0.95); k(3, 0.6); k(10, 0.7); sn(8, 1); if (local === 7) { sn(12, 0.7); sn(14, 0.85); } }
+    });
+
+    tape.start();
+    return { releaseAll() { piano.releaseAll(); voice.releaseAll(); chopVoice.releaseAll(); sub.triggerRelease(); } };
+  },
+});
+})();
+
+</script>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const fmtT = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+SONGS.sort((a, b) => a.no - b.no);
+
+// ---------- song geometry ----------
+function geometry(song) {
+  const BAR = 240 / song.bpm, S = BAR / 16, swing = song.swing || 0;
+  const BARS = [];
+  song.sections.forEach((s, si) => {
+    s.start = BARS.length;
+    for (let i = 0; i < s.bars; i++) BARS.push({ sec: s, si, local: i, chord: song.chords[s.chords[i % s.chords.length]] });
+  });
+  const END = BARS.length * BAR + (song.tail ?? 4);
+  return { BAR, S, swing, BARS, END };
+}
+SONGS.forEach(s => { s.geo = geometry(s); });
+
+// ---------- shared kit for song builders ----------
+function makeKit(song, transport, hitCb) {
+  const { BAR, S, swing, BARS, END } = song.geo;
+  const master = new Tone.Gain(song.masterGain ?? 0.8);
+  const comp = new Tone.Compressor({ threshold: -18, ratio: 3.5, attack: 0.006, release: 0.18, ...(song.comp || {}) });
+  const limiter = new Tone.Limiter(-1.5);
+  const scope = new Tone.Waveform(1024);
+  master.chain(comp, limiter, Tone.getDestination());
+  limiter.connect(scope);
+  const ch = {};
+  // per-song send buses (Tone.Channel.send/receive use a global registry that breaks after a context swap)
+  const buses = {};
+  const busIn = name => buses[name] || (buses[name] = new Tone.Gain(1));
+  return {
+    BAR, S, BARS, END, master, scope, ch,
+    T: (bar, step) => bar * BAR + step * S + (swing && Math.floor(step) % 2 && step % 1 === 0 ? swing * S : 0),
+    D: steps => steps * S,
+    m: n => Tone.Frequency(n).toMidi(),
+    f: midi => Tone.Frequency(midi, "midi").toNote(),
+    at: (time, fn) => transport.schedule(fn, time),
+    human: (amt = 0.005) => (Math.random() * 2 - 1) * amt,
+    flash: (part, time) => { const cb = hitCb[part]; if (cb) Tone.Draw.schedule(cb, time); },
+    channel(name, volume, sends = {}) {
+      const c = new Tone.Channel({ volume }).connect(master);
+      for (const [bus, db] of Object.entries(sends)) c.connect(new Tone.Gain(Tone.dbToGain(db)).connect(busIn(bus)));
+      return (ch[name] = c);
+    },
+    bus(name, volume, ...fx) {
+      const c = new Tone.Channel({ volume });
+      busIn(name).connect(c);
+      c.chain(...fx, master);
+      return c;
+    },
+    shaper: levels => new Tone.WaveShaper(x => Math.round(x * levels) / levels, 4096),
+  };
+}
+
+// ---------- state ----------
+let cur = null;        // current song
+let G = null;          // built graph {kit, api}
+let starting = null, busy = false;
+const muted = {};
+const hitCb = {};
+
+// ---------- track list ----------
+const tracks = $("tracks");
+$("count").textContent = `${SONGS.length}曲`;
+SONGS.forEach(s => {
+  const li = document.createElement("li");
+  li.innerHTML = `<button class="track" type="button" id="track-${s.id}" style="--tc:${s.accent.light}">
+    <span class="no">${String(s.no).padStart(2, "0")}</span>
+    <span class="t">${esc(s.title)}</span>
+    <span class="len">${fmtT(s.geo.END)}</span>
+    <span class="g"><span class="dot"></span>${esc(s.genre)}</span>
+  </button>`;
+  li.firstElementChild.addEventListener("click", () => select(s.id, true));
+  tracks.appendChild(li);
+});
+function trackColors() {
+  const dark = document.documentElement.dataset.theme === "dark" || (document.documentElement.dataset.theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+  SONGS.forEach(s => $("track-" + s.id).style.setProperty("--tc", dark ? s.accent.dark : s.accent.light));
+}
+trackColors();
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", trackColors); } catch {}
+new MutationObserver(trackColors).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+const stepsEl = $("steps");
+for (let i = 0; i < 16; i++) stepsEl.appendChild(document.createElement("i"));
+
+// ---------- select / render song page ----------
+async function select(id, autoplay) {
+  const song = SONGS.find(s => s.id === id) || SONGS[SONGS.length - 1];
+  if (cur === song) { if (autoplay && !(G && Tone.Transport.state === "started")) toggle(); return; }
+  await teardown();
+  cur = song;
+  for (const k in muted) delete muted[k];
+  try { if (location.hash !== "#" + song.id) history.replaceState(null, "", "#" + song.id); } catch {}
+  const root = document.documentElement.style;
+  root.setProperty("--acc-l", song.accent.light); root.setProperty("--acc-d", song.accent.dark);
+  SONGS.forEach(s => $("track-" + s.id).setAttribute("aria-current", String(s === song)));
+  $("eyebrow").textContent = `No.${String(song.no).padStart(2, "0")} · ${song.genre} · ${song.date}`;
+  $("title").textContent = song.title;
+  $("meta").innerHTML = [`${song.bpm} BPM`, song.key, song.meter || "4/4", fmtT(song.geo.END), "インスト"].map(x => `<span>${esc(x)}</span>`).join("");
+  $("blurb").textContent = song.blurb;
+  document.title = `${song.title} — 履歴盤`;
+
+  const tl = $("timeline"); tl.innerHTML = "";
+  song.sections.forEach(s => {
+    const b = document.createElement("button");
+    b.className = "seg"; b.type = "button"; b.id = "seg-" + s.id;
+    b.style.flex = `${s.bars} 1 0`; b.style.setProperty("--o", s.intensity ?? 0.5);
+    b.innerHTML = `<div class="fill"></div><span>${esc(s.name)}</span>`;
+    b.title = `${s.name}（${s.bars}小節）`;
+    b.addEventListener("click", () => seek(s.start * song.geo.BAR, true));
+    tl.appendChild(b);
+  });
+  const mixer = $("mixer");
+  mixer.innerHTML = "";
+  song.parts.forEach(([k, label]) => {
+    const b = document.createElement("button");
+    b.className = "part"; b.type = "button"; b.id = "part-" + k;
+    b.setAttribute("aria-pressed", "true");
+    b.innerHTML = `<span class="led"></span>${esc(label)}`;
+    b.addEventListener("click", () => { muted[k] = !muted[k]; b.setAttribute("aria-pressed", String(!muted[k])); if (G && G.kit.ch[k]) G.kit.ch[k].mute = muted[k]; });
+    mixer.appendChild(b);
+    hitCb[k] = () => { b.classList.add("hit"); setTimeout(() => b.classList.remove("hit"), 90); };
+  });
+  $("why").innerHTML = song.why.map(([w, sub, how, src]) => `<div class="row">
+    <div class="what">${esc(w)}<small>${esc(sub)}</small></div>
+    <div class="how">${esc(how)}</div>
+    <div class="src">${src.map(([n, h]) => `<span class="tag">${esc(n)}${h != null ? `<b>${h}h</b>` : ""}</span>`).join("")}</div>
+  </div>`).join("");
+  $("sheet").innerHTML = song.sections.map(s => {
+    const row = []; for (let i = 0; i < s.bars; i++) row.push(s.chords[i % s.chords.length]);
+    const lines = []; for (let i = 0; i < row.length; i += 8) lines.push(row.slice(i, i + 8));
+    return lines.map((r, ri) => `<tr><th>${ri === 0 ? esc(s.name) : ""}</th>${r.map(c => `<td>${esc(song.chords[c].sym)}</td>`).join("")}${"<td></td>".repeat(8 - r.length)}</tr>`).join("");
+  }).join("");
+  $("err").hidden = true;
+  lastKey = ""; draw(true);
+  if (autoplay) toggle();
+}
+
+async function teardown() {
+  if (!G && !starting) return;
+  try { await starting; } catch {}
+  try { Tone.Transport.stop(); Tone.Transport.cancel(0); } catch {}
+  const old = Tone.getContext();
+  G = null; starting = null;
+  Tone.setContext(new Tone.Context());
+  try { old.dispose(); } catch {}
+  setPlaying(false); lastPlaying = false;
+}
+
+async function ensure() {
+  if (G) return G;
+  if (!starting) starting = (async () => {
+    await Tone.start();
+    const tr = Tone.Transport;
+    tr.cancel(0); tr.bpm.value = cur.bpm; tr.seconds = 0;
+    const kit = makeKit(cur, tr, hitCb);
+    const api = cur.build(tr, kit) || {};
+    for (const [k] of cur.parts) if (kit.ch[k]) kit.ch[k].mute = !!muted[k];
+    tr.schedule(t => Tone.Draw.schedule(() => { tr.stop(); tr.seconds = 0; release(); }, t), kit.END);
+    G = { kit, api };
+    return G;
+  })();
+  return starting;
+}
+function release() { try { G && G.api.releaseAll && G.api.releaseAll(); } catch {} }
+function setPlaying(p) { $("icon-play").toggleAttribute("hidden", p); $("icon-pause").toggleAttribute("hidden", !p); $("play").setAttribute("aria-label", p ? "一時停止" : "再生"); }
+
+async function toggle() {
+  if (busy) return;
+  try {
+    busy = true;
+    if (!G) $("now-sec").textContent = "音源を準備しています…";
+    await ensure();
+    const tr = Tone.Transport;
+    if (tr.state === "started") { tr.pause(); release(); setPlaying(false); }
+    else { tr.start("+0.05"); setPlaying(true); }
+  } catch (e) { showErr(e); }
+  finally { busy = false; lastKey = ""; }
+}
+async function seek(sec, autoplay) {
+  if (busy) return;
+  try {
+    busy = true;
+    await ensure();
+    release();
+    Tone.Transport.seconds = sec;
+    if (autoplay && Tone.Transport.state !== "started") { Tone.Transport.start("+0.05"); setPlaying(true); }
+  } catch (e) { showErr(e); }
+  finally { busy = false; lastKey = ""; }
+}
+function showErr(e) { const el = $("err"); el.hidden = false; el.textContent = "音を鳴らせませんでした（" + (e && e.message || e) + "）。ページを再読み込みしてもう一度お試しください。"; }
+$("play").addEventListener("click", toggle);
+$("rewind").addEventListener("click", () => seek(0, false));
+
+// ---------- scope + UI loop ----------
+const cv = $("scope"), cx = cv.getContext("2d");
+function sizeScope() { const r = cv.getBoundingClientRect(); cv.width = Math.max(1, Math.round(r.width * devicePixelRatio)); cv.height = Math.max(1, Math.round(r.height * devicePixelRatio)); }
+sizeScope(); addEventListener("resize", sizeScope);
+function drawScope(playing) {
+  const w = cv.width, h = cv.height;
+  cx.clearRect(0, 0, w, h);
+  cx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#d98a1e";
+  cx.lineWidth = 2 * devicePixelRatio;
+  cx.beginPath();
+  const data = playing && G ? G.kit.scope.getValue() : null;
+  const n = data ? data.length : 2;
+  for (let i = 0; i < n; i++) { const x = i / (n - 1) * w, y = h / 2 - (data ? data[i] : 0) * h * 0.45; i ? cx.lineTo(x, y) : cx.moveTo(x, y); }
+  cx.stroke();
+}
+let lastKey = "", lastPlaying = false;
+function draw(force) {
+  if (!cur) return;
+  const playing = !!G && Tone.Transport.state === "started";
+  if (playing !== lastPlaying && !busy) { lastPlaying = playing; setPlaying(playing); }
+  SONGS.forEach(s => $("track-" + s.id).classList.toggle("playing", playing && s === cur));
+  const { BAR, S, BARS, END } = cur.geo;
+  const sec = G ? Math.max(0, Tone.Transport.seconds) : 0;
+  const barIdx = Math.min(BARS.length - 1, Math.floor(sec / BAR));
+  const step = Math.floor((sec % BAR) / S);
+  const b = BARS[barIdx];
+  const key = cur.id + barIdx + ":" + step + playing;
+  if (key !== lastKey || force) {
+    lastKey = key;
+    if (!busy) $("now-sec").textContent = `${b.sec.name} · ${b.local + 1}小節目`;
+    $("now-chord").textContent = b.chord.sym;
+    [...stepsEl.children].forEach((el, i) => el.classList.toggle("on", playing && i === step));
+    cur.sections.forEach((s, si) => {
+      const seg = $("seg-" + s.id); if (!seg) return;
+      seg.classList.toggle("cur", si === b.si);
+      const p = si < b.si ? 1 : si > b.si ? 0 : (sec - s.start * BAR) / (s.bars * BAR);
+      seg.firstChild.style.width = (Math.min(1, Math.max(0, p)) * 100).toFixed(1) + "%";
+    });
+    $("clock").textContent = `${fmtT(Math.min(sec, END))} / ${fmtT(END)}`;
+  }
+  drawScope(playing);
+}
+(function loop() { draw(false); requestAnimationFrame(loop); })();
+
+const initial = (location.hash || "").slice(1);
+select(SONGS.some(s => s.id === initial) ? initial : SONGS[SONGS.length - 1].id, false);
+window.addEventListener("hashchange", () => { const id = location.hash.slice(1); if (SONGS.some(s => s.id === id)) select(id, false); });
+window.RIREKI = { SONGS, geometry, makeKit };
+})();
+</script>

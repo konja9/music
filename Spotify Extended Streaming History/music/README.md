@@ -1,0 +1,37 @@
+# 履歴盤 — Spotify の再生履歴から作ったオリジナル曲
+
+公開サイト（非公開の Artifact）: https://claude.ai/artifact/5uTy27eZjMLx2i6Y1AehtP
+
+## 構成
+
+| パス | 役割 |
+|---|---|
+| `songs/NN-id.js` | 1曲 = 1ファイル。楽譜・音色・解説をすべて持つ |
+| `site/template.html` | サイト本体（曲の一覧、プレイヤー、共通の音の土台 `kit`） |
+| `build.mjs` | `songs/*.js` を番号順に集めて `dist/index.html` を作る |
+| `test.mjs` | Tone.js のダミーで全曲を最後まで空実行し、エラーを探す |
+| `dist/index.html` | 公開するファイル（生成物。直接編集しない） |
+| `listening-summary.json` | 再生履歴の集計（アーティスト別の再生時間など。IPアドレスは含まない） |
+| `tools/aggregate.mjs` | 元の履歴 JSON から `listening-summary.json` を作り直す |
+
+## 新しい曲を追加する手順
+
+1. `songs/` に次の番号でファイルを作る（例: `06-some-id.js`）。既存の曲ファイルをひな形にする。
+2. ビルドしてから空実行チェックをする（test は dist を読むため、この順番で）。
+   ```
+   node music/build.mjs && node music/test.mjs
+   ```
+3. 全曲 OK なら、`music/dist/index.html` を上記 URL の Artifact に公開し直す。
+
+曲ファイルの必須項目は `build.mjs` が確認します:
+`id`（英数字と - _）, `no`, `title`, `date`, `bpm`, `key`, `genre`, `blurb`, `accent: {light, dark}`,
+`chords`（`{sym, root(MIDI), v:[音名]}`）, `sections`（`{id, name, bars, chords:[chordsのキー], intensity}`）,
+`parts`（`[[チャンネル名, 表示名]]`。`kit.channel()` で同じ名前のチャンネルを作ること）, `why`, `build(transport, kit)`。
+
+`build()` 内で使える `kit`:
+- `T(bar, step)` 16分単位の時刻（`swing` を反映）、`D(steps)` 長さ、`BAR`, `BARS`（各小節の `{sec, local, chord}`）
+- `channel(name, dB, {rev, dly})`, `bus(name, dB, ...effects)`, `master`, `shaper(levels)`（ビット削り）
+- `at(time, fn)`（Transport に予約）, `flash(part, time)`（ミキサーのランプ）, `human(sec)`, `m(音名)→MIDI`, `f(MIDI)→音名`
+- `build()` は `{ releaseAll() }` を返す（一時停止・頭出し時に鳴っている音を止める）
+
+注意: 音の状態（フィルタやエフェクト量）は小節の頭ごとに設定し直すこと。区間ジャンプしても正しい状態になるようにするためです。
