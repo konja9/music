@@ -56,12 +56,12 @@ function wavToPcm(buf) {
   return { pcm: Buffer.from(out.buffer), sr: fmt.sr, frames };
 }
 
-// render one pattern (code string) for `cycles` bars at `cps`; returns { pcm, sr, frames, errors }
-export async function renderCode(browser, code, cps, cycles, name = "render") {
+// render one pattern (code string) from cycle `begin` to `end` at `cps`; returns { pcm, sr, frames, errors }
+export async function renderCode(browser, code, cps, end, name = "render", begin = 0) {
   const page = await browser.newPage();
-  const errors = [];
+  const errors = [], logs = [];
   page.on("pageerror", e => errors.push(e.message));
-  page.on("console", m => { if (m.type() === "error") errors.push(m.text()); });
+  page.on("console", m => { const t = m.text(); logs.push(t); if (m.type() === "error" || /error/i.test(t)) errors.push(t); });
   await page.route("**/*", async route => {
     const u = new URL(route.request().url());
     if (u.hostname !== "local.render") return route.fulfill({ status: 404, body: "" });
@@ -73,11 +73,14 @@ export async function renderCode(browser, code, cps, cycles, name = "render") {
   await page.goto("https://local.render/strudel.html");
   await page.waitForFunction(() => window.ready);
   const download = page.waitForEvent("download", { timeout: 600000 });
-  await page.evaluate(async ({ code, cps, cycles, map, name }) => {
+  const ok = await page.evaluate(async ({ code, cps, begin, end, map, name }) => {
     await S.initStrudel({ prebake: () => S.samples(map, "https://local.render/samples/") });
     const pattern = await S.evaluate(code, false);
-    await S.renderPatternAudio(pattern, cps, 0, cycles, 44100, 256, false, name);
-  }, { code, cps, cycles, map: sampleMap(), name });
+    if (!pattern || typeof pattern.queryArc !== "function") return "コードの評価に失敗しました（パターンが返りませんでした）";
+    await S.renderPatternAudio(pattern, cps, begin, end, 44100, 256, false, name);
+    return "";
+  }, { code, cps, begin, end, map: sampleMap(), name });
+  if (ok) { await page.close(); throw new Error(ok + "\n" + logs.slice(-15).join("\n")); }
   const d = await download;
   const wav = fs.readFileSync(await d.path());
   await page.close();
@@ -91,7 +94,29 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   for (const { stem, song } of loadStrudelSongs().filter(s => !want.length || want.includes(s.song.id))) {
     const bars = song.sections.reduce((a, s) => a + s.bars, 0), tail = song.tailBars ?? 2;
     const t0 = Date.now();
-    const r = await renderCode(browser, song.code, song.bpm / 240, bars + tail, stem);
+    // offline rendering time grows faster than linearly with length, so render in chunks of CHUNK bars;
+    // each chunk starts PRE bars early (so reverb / delay tails are already there) and keeps only its own bars.
+    // Renders are not bit-identical (the reverb impulse is random noise), so each chunk also runs XF seconds past
+    // its end and the next chunk fades in over that overlap instead of starting with a hard step.
+    const CHUNK = 8, PRE = 4, XF = 0.03, cps = song.bpm / 240, parts = [], errors = [];
+    let sr = 44100, prevTail = null;
+    for (let b = 0; b < bars + tail; b += CHUNK) {
+      const from = Math.max(0, b - PRE), to = Math.min(bars + tail, b + CHUNK), last = to >= bars + tail;
+      const c = await renderCode(browser, song.code, cps, last ? to : to + XF * cps * 1.5, `${stem}-${b}`, from);
+      sr = c.sr; errors.push(...c.errors);
+      const skip = Math.round((b - from) / cps * sr), keep = Math.round((to - b) / cps * sr), xf = Math.round(XF * sr);
+      const src = new Int16Array(c.pcm.buffer, c.pcm.byteOffset, c.pcm.length / 2);
+      const own = Int16Array.from(src.subarray(skip * 2, (skip + keep) * 2));
+      if (prevTail) for (let i = 0; i < Math.min(xf, prevTail.length / 2, own.length / 2); i++) {
+        const w = 0.5 - 0.5 * Math.cos(Math.PI * i / xf);                 // raised-cosine fade: 0 -> 1
+        for (let ch = 0; ch < 2; ch++) own[i * 2 + ch] = Math.round(prevTail[i * 2 + ch] * (1 - w) + own[i * 2 + ch] * w);
+      }
+      prevTail = src.slice((skip + keep) * 2, (skip + keep + xf) * 2);
+      parts.push(Buffer.from(own.buffer));
+      process.stdout.write(`  bars ${b}-${to}\r`);
+    }
+    const pcm = Buffer.concat(parts);
+    const r = { pcm, sr, frames: pcm.length / 4, errors };
     fs.writeFileSync(path.join(OUT, stem + ".pcm"), r.pcm);
     const lengthSec = (bars + tail) * 240 / song.bpm;
     fs.writeFileSync(path.join(OUT, stem + ".json"), JSON.stringify({ id: song.id, stem, sampleRate: r.sr, frames: r.frames, originFrame: 0, lengthSec, errors: r.errors }));

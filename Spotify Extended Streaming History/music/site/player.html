@@ -98,7 +98,7 @@ h3 { font-family: var(--font-display); font-weight: 400; font-size: 22px; margin
 .tag b { font-family: var(--font-mono); font-weight: 500; margin-left: 4px; color: var(--ink-2); }
 @media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
 .chart-sheet { overflow-x: auto; }
-svg[hidden] { display: none; }
+svg[hidden], .btn[hidden] { display: none; }
 .sheet { font-family: var(--font-mono); font-size: 13px; border-collapse: collapse; min-width: 560px; width: 100%; }
 .sheet th { text-align: left; font-weight: 500; color: var(--ink-3); font-size: 12px; padding: 5px 10px 5px 0; white-space: nowrap; }
 .sheet td { padding: 5px 10px; border-left: 1px solid var(--line); white-space: nowrap; }
@@ -236,7 +236,7 @@ function select(id, play) {
     const lines = []; for (let i = 0; i < syms.length; i += 8) lines.push(syms.slice(i, i + 8));
     return lines.map((r, ri) => `<tr><th>${ri === 0 ? esc(name) : ""}</th>${r.map(c => `<td>${esc(c)}</td>`).join("")}${"<td></td>".repeat(8 - r.length)}</tr>`).join("");
   }).join("");
-  const dl = $("download"); dl.href = s.src; dl.setAttribute("download", `履歴盤 ${String(s.no).padStart(2, "0")} ${s.title}.mp3`);
+  const dl = $("download"); dl.href = s.src; dl.setAttribute("download", fileName(s) + ".mp3");
   $("err").hidden = true;
   audio.src = s.src;
   audio.load();
@@ -346,4 +346,39 @@ select(TRACKS.some(s => s.id === initial) ? initial : TRACKS[TRACKS.length - 1].
 addEventListener("hashchange", () => { const id = location.hash.slice(1); if (TRACKS.some(s => s.id === id)) select(id, false); });
 trackColors();
 })();
+// ---------- download ----------
+// Inside claude.ai the page cannot download by link; the `downloads` capability saves files, but not .mp3,
+// so there the MP3 is wrapped in an uncompressed .zip. Outside claude.ai the plain link works.
+function fileName(s) { return `履歴盤 ${String(s.no).padStart(2, "0")} ${s.title}`; }
+const CRC = new Uint32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+function crc32(b) { let c = ~0; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return ~c >>> 0; }
+function zipOne(name, data) {                                  // one stored (uncompressed) file, UTF-8 name
+  const nm = new TextEncoder().encode(name), crc = crc32(data), n = data.length;
+  const lh = new DataView(new ArrayBuffer(30)), ch = new DataView(new ArrayBuffer(46)), end = new DataView(new ArrayBuffer(22));
+  [[0, 0x04034b50, 4], [4, 20, 2], [6, 0x0800, 2], [14, crc, 4], [18, n, 4], [22, n, 4], [26, nm.length, 2]].forEach(([o, v, w]) => w === 4 ? lh.setUint32(o, v, true) : lh.setUint16(o, v, true));
+  [[0, 0x02014b50, 4], [4, 20, 2], [6, 20, 2], [8, 0x0800, 2], [16, crc, 4], [20, n, 4], [24, n, 4], [28, nm.length, 2]].forEach(([o, v, w]) => w === 4 ? ch.setUint32(o, v, true) : ch.setUint16(o, v, true));
+  const cdOff = 30 + nm.length + n, cdLen = 46 + nm.length;
+  [[0, 0x06054b50, 4], [8, 1, 2], [10, 1, 2], [12, cdLen, 4], [16, cdOff, 4]].forEach(([o, v, w]) => w === 4 ? end.setUint32(o, v, true) : end.setUint16(o, v, true));
+  return new Blob([lh, nm, data, ch, nm, end], { type: "application/zip" });
+}
+if (window.claude && window.claude.use) {
+  const dl = $("download");
+  dl.hidden = true;                                            // shown only when saving is possible here
+  window.claude.use("downloads").then(downloads => {
+    if (!downloads) return;
+    dl.hidden = false; dl.textContent = "ダウンロード（MP3 を zip で）";
+    dl.addEventListener("click", async e => {
+      e.preventDefault();
+      if (dl.dataset.busy) return; dl.dataset.busy = "1";
+      const s = cur, label = dl.textContent; dl.textContent = "準備中…";
+      try {
+        const buf = new Uint8Array(await (await fetch(s.src)).arrayBuffer());
+        await downloads.save({ filename: fileName(s) + ".zip", data: zipOne(fileName(s) + ".mp3", buf) });
+      } catch (err) {
+        if (err && ["unavailable", "not_granted", "capability_disabled", "capability_removed"].includes(err.code)) dl.hidden = true;
+        else if (!err || err.code !== "declined") showErr(err && (err.message || err.code) || err);
+      } finally { dl.textContent = label; delete dl.dataset.busy; }
+    });
+  });
+}
 </script>

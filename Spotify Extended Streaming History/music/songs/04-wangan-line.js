@@ -238,7 +238,10 @@ SONGS.push({
 
       // ----- drums -----
       const k = (s, vv = 0.95) => at(T(i, s), t => { kick.triggerAttackRelease("C1", "8n", t, vv); flash("drums", t); });
-      const sn = (s, vv = 0.9) => at(T(i, s) + human(0.004), t => { snareN.triggerAttackRelease("16n", t, vv); snareB.triggerAttackRelease("B2", "16n", t, vv); });
+      // snare hits are collected per step (a fill replaces the regular hit) and scheduled once below,
+      // so two jittered hits on one step can never arrive out of order
+      const snare = new Map();
+      const sn = (s, vv = 0.9) => snare.set(s, vv);
       const h = (s, vv = 0.45) => at(T(i, s) + human(0.004), t => hat.triggerAttackRelease("32n", t, vv));
       const oh = (s, vv = 0.5) => at(T(i, s), t => ohat.triggerAttackRelease("16n", t, vv));
       const cp = (s, vv = 0.7) => at(T(i, s) + 0.006, t => clap.triggerAttackRelease("16n", t, vv));
@@ -272,6 +275,7 @@ SONGS.push({
         if (local < 3) { [0, 4, 8, 12].forEach(s => k(s, 0.85)); sn(4); sn(12); for (let s = 0; s < 16; s += 2) h(s, 0.4); }
         else { k(0, 1); }
       }
+      snare.forEach((vv, s) => at(T(i, s) + human(0.004), t => { snareN.triggerAttackRelease("16n", t, vv); snareB.triggerAttackRelease("B2", "16n", t, vv); }));
 
       // ----- lead -----
       if (id === "verse" || id === "verse2") phrase(i, local === 7 ? VERSE_END : VERSE_MEL[local % 4]);

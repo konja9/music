@@ -73,7 +73,7 @@ const bridge = stack(
   stack(s("bdmid ~ bdmid ~ bdmid ~ bdmid ~").speed(.8), s("~ sdsnappy ~ sdsnappy"), s("hh*16").gain(.35).pan(.3))
     .coarse(4).crush(6).distort(.35).gain(.7),
   s("~ ~ ~ vhours1290").begin(.1).end(.5).speed(.8).gain(.4).room(.6).pan(-.4)
-)
+).gain(.6)                                                  // distortion adds level: keep the bridge in line
 const outro = stack(chopRec.lpf(1500).gain(.4), swell.gain(.35), note(roots).s("sine").struct("x ~ ~ ~").gain(.3))
 
 arrange(
@@ -83,6 +83,6 @@ arrange(
   [8, bridge],
   [12, loopFlute],
   [4, outro]
-).gain(.8)
+).gain(.2)
 `,
 });

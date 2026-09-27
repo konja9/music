@@ -77,6 +77,6 @@ const day = stack(clock, pad, sub, harp, piano, bass, drums, peak, voices)
 const intro = stack(clock, sub.gain(.6))
 const outro = stack(clock, pad.lpf(500), s("vhours1290").begin(.05).gain(.35).room(.6))
 
-arrange([2, intro], [48, day], [2, outro]).gain(.8)
+arrange([2, intro], [48, day], [2, outro]).gain(.2)
 `,
 });
