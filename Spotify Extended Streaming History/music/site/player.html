@@ -67,7 +67,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-family: var(--font-mono); font-size: 13px; color: var(--ink-2); }
 .lede { margin: 2px 0 0; color: var(--ink-2); max-width: 62ch; }
 
-.player { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 16px; }
+.player { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; min-width: 0; }
 .transport { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
 .play { width: 60px; height: 60px; border-radius: 50%; border: 0; background: var(--accent); color: var(--on-accent); cursor: pointer; display: grid; place-items: center; flex: none; }
 .play svg { width: 24px; height: 24px; fill: currentColor; }
@@ -345,7 +345,6 @@ const initial = (location.hash || "").slice(1);
 select(TRACKS.some(s => s.id === initial) ? initial : TRACKS[TRACKS.length - 1].id, false);
 addEventListener("hashchange", () => { const id = location.hash.slice(1); if (TRACKS.some(s => s.id === id)) select(id, false); });
 trackColors();
-})();
 // ---------- download ----------
 // Inside claude.ai the page cannot download by link; the `downloads` capability saves files, but not .mp3,
 // so there the MP3 is wrapped in an uncompressed .zip. Outside claude.ai the plain link works.
@@ -381,4 +380,5 @@ if (window.claude && window.claude.use) {
     });
   });
 }
+})();
 </script>
