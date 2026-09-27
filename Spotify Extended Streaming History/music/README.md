@@ -56,3 +56,11 @@
 4. `site/template.html` は変えなくてよい。build すれば一覧に入る
 
 注意: `Tone.Transport` / `Tone.Draw` は使わず `Tone.getTransport()` / `Tone.getDraw()` を使う（曲を切り替えるたびに Tone の Context を作り直すため、古い方を指したままになる）。
+
+## 保留中: 書き出してプレイヤーで公開する形式（未使用）
+
+音声ファイルに書き出して公開する形式を試しかけたが、Suno で作る方針に変わったため保留にした。今のサイトと build には組み込んでいない。
+- `render/render-tone.mjs`: Tone.js の曲をヘッドレス Chromium で実時間再生して録音する（`render/out/` に PCM。git には入れない）
+- `render/encode.mjs`: 録音を曲の長さに切り、音量をそろえて MP3 と波形データ（`audio/`）にする
+- `site/player.html`: 書き出した MP3 を再生するプレイヤーの試作（`/*__TRACKS__*/` に曲情報を入れる想定）
+- `audio/05-zankyo.*`: 試しに書き出した No.05

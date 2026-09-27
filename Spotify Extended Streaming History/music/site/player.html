@@ -1,0 +1,348 @@
+<title>履歴盤</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+JP:wght@400;500;700&display=swap">
+<style>
+:root {
+  --bg: #ecebe8;
+  --surface: #f7f6f4;
+  --surface-2: #dfddd8;
+  --line: #cfccc5;
+  --ink: #17161a;
+  --ink-2: #48464e;
+  --ink-3: #75727c;
+  --acc-l: #d98a1e; --acc-d: #f0a640;
+  --accent: var(--acc-l);
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  --on-accent: #ffffff;
+  --scope-bg: #17161a;
+  --font-display: "Dela Gothic One", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-body: "IBM Plex Sans JP", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #111013; --surface: #1a191d; --surface-2: #242328; --line: #333138;
+    --ink: #f1eff4; --ink-2: #bab7c2; --ink-3: #87848f;
+    --accent: var(--acc-d); --on-accent: #111013; --scope-bg: #0a090b;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111013; --surface: #1a191d; --surface-2: #242328; --line: #333138;
+  --ink: #f1eff4; --ink-2: #bab7c2; --ink-3: #87848f;
+  --accent: var(--acc-d); --on-accent: #111013; --scope-bg: #0a090b;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.65; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 36px 20px 72px; display: grid; gap: 28px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.site-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
+.site-head h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(34px, 6vw, 52px); margin: 0; line-height: 1.1; }
+.site-head p { margin: 0; color: var(--ink-2); max-width: 52ch; font-size: 14px; }
+
+.layout { display: grid; grid-template-columns: minmax(250px, 320px) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+
+.tracks { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+@media (max-width: 860px) { .tracks { position: static; } }
+.tracks-head { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-3); padding: 0 10px 6px; font-family: var(--font-mono); }
+.track { width: 100%; font: inherit; text-align: left; border: 0; background: none; color: var(--ink); cursor: pointer; display: grid; grid-template-columns: 2.2em minmax(0, 1fr) auto; gap: 0 10px; align-items: center; padding: 10px; border-radius: 8px; }
+.track:hover { background: var(--surface-2); }
+.track[aria-current="true"] { background: var(--surface); box-shadow: inset 3px 0 0 var(--tc); }
+.track .no { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }
+.track .t { font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.track .g { grid-column: 2; font-size: 12px; color: var(--ink-3); }
+.track .len { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); grid-row: 1; grid-column: 3; }
+.track .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--tc); display: inline-block; margin-right: 6px; vertical-align: 1px; }
+.track.playing .len::before { content: "♪ "; color: var(--tc); }
+
+.main { display: grid; gap: 28px; min-width: 0; }
+.hero { display: grid; gap: 8px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; color: var(--ink-3); text-transform: uppercase; }
+.hero h2 { font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 8vw, 72px); line-height: 1.05; margin: 0; text-wrap: balance; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-family: var(--font-mono); font-size: 13px; color: var(--ink-2); }
+.lede { margin: 2px 0 0; color: var(--ink-2); max-width: 62ch; }
+
+.player { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 16px; }
+.transport { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.play { width: 60px; height: 60px; border-radius: 50%; border: 0; background: var(--accent); color: var(--on-accent); cursor: pointer; display: grid; place-items: center; flex: none; }
+.play svg { width: 24px; height: 24px; fill: currentColor; }
+.play:hover { filter: brightness(1.07); }
+.btn { font: inherit; font-size: 13px; background: none; border: 1px solid var(--line); color: var(--ink-2); padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+.btn:hover { border-color: var(--accent); color: var(--ink); }
+.now { display: grid; min-width: 0; flex: 1 1 180px; }
+.now .sec { font-size: 12px; color: var(--ink-3); letter-spacing: .05em; }
+.now .chord { font-family: var(--font-display); font-size: clamp(26px, 5vw, 36px); line-height: 1.2; overflow-wrap: anywhere; }
+.clock { font-family: var(--font-mono); font-size: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.timeline { display: flex; gap: 3px; height: 42px; }
+.seg { position: relative; border: 0; padding: 0 8px; border-radius: 6px; cursor: pointer; font: inherit; font-size: 12px; text-align: left; color: var(--ink); background: var(--surface-2); overflow: hidden; min-width: 0; }
+.seg::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--accent); opacity: var(--o, .5); }
+.seg span { position: relative; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg.cur { background: var(--accent-soft); font-weight: 500; }
+.seg .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); opacity: .16; width: 0; pointer-events: none; }
+.err { color: #c0392b; font-size: 13px; margin: 0; }
+
+h3 { font-family: var(--font-display); font-weight: 400; font-size: 22px; margin: 0; }
+.block { display: grid; gap: 12px; }
+.rows { display: grid; border-top: 1px solid var(--line); }
+.row { display: grid; grid-template-columns: 9em minmax(0, 1fr) minmax(0, 14em); gap: 6px 18px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.row .what { font-weight: 700; }
+.row .what small { display: block; font-weight: 400; font-size: 12px; color: var(--ink-3); font-family: var(--font-mono); }
+.row .how { color: var(--ink-2); }
+.row .src { display: flex; flex-wrap: wrap; gap: 4px 6px; align-content: start; }
+.tag { font-size: 12px; border-radius: 4px; padding: 1px 7px; background: var(--surface-2); white-space: nowrap; }
+.tag b { font-family: var(--font-mono); font-weight: 500; margin-left: 4px; color: var(--ink-2); }
+@media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
+.chart-sheet { overflow-x: auto; }
+svg[hidden] { display: none; }
+.sheet { font-family: var(--font-mono); font-size: 13px; border-collapse: collapse; min-width: 560px; width: 100%; }
+.sheet th { text-align: left; font-weight: 500; color: var(--ink-3); font-size: 12px; padding: 5px 10px 5px 0; white-space: nowrap; }
+.sheet td { padding: 5px 10px; border-left: 1px solid var(--line); white-space: nowrap; }
+footer { font-size: 12px; color: var(--ink-3); }
+footer p { margin: 0; max-width: 76ch; }
+@media (prefers-reduced-motion: reduce) { .part .led { transition: none; } }
+.wave { position: relative; height: 88px; border-radius: 6px; background: var(--scope-bg); cursor: pointer; touch-action: none; }
+.wave canvas { width: 100%; height: 100%; display: block; }
+.wave .hover { position: absolute; top: 4px; transform: translateX(-50%); font-family: var(--font-mono); font-size: 11px; color: #fff; background: rgba(0,0,0,.55); padding: 1px 6px; border-radius: 4px; pointer-events: none; }
+.ctrl { width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); cursor: pointer; display: grid; place-items: center; flex: none; }
+.ctrl:hover { border-color: var(--accent); color: var(--ink); }
+.ctrl svg { width: 18px; height: 18px; fill: currentColor; }
+.opts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 13px; color: var(--ink-2); }
+.opts a.btn { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.toggle[aria-pressed="true"] { border-color: var(--accent); color: var(--ink); background: var(--accent-soft); }
+.hint { font-size: 12px; color: var(--ink-3); margin: 0; }
+.track .len { font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { .transport { gap: 10px 12px; } .clock { order: 5; } }
+</style>
+
+<div class="wrap">
+  <header class="site-head">
+    <h1>履歴盤</h1>
+    <p>Spotify の再生履歴（2016〜2026年、約1,290時間）をもとに作ったオリジナル曲の置き場です。どの曲も書き出した音声で再生します。</p>
+  </header>
+
+  <div class="layout">
+    <nav aria-label="曲の一覧">
+      <div class="tracks-head"><span id="count"></span><span>長さ</span></div>
+      <ol class="tracks" id="tracks"></ol>
+    </nav>
+
+    <main class="main">
+      <section class="hero">
+        <div class="eyebrow" id="eyebrow"></div>
+        <h2 id="title"></h2>
+        <div class="meta" id="meta"></div>
+        <p class="lede" id="blurb"></p>
+      </section>
+
+      <section class="player" aria-label="プレイヤー">
+        <div class="wave" id="wave" role="slider" aria-label="再生位置" tabindex="0" aria-valuemin="0"><canvas id="wave-cv"></canvas><span class="hover" id="wave-hover" hidden></span></div>
+        <div class="transport">
+          <button class="ctrl" id="prev" type="button" aria-label="前の曲"><svg viewBox="0 0 24 24"><path d="M6 5h2.5v14H6zM20 5v14L9.5 12z"/></svg></button>
+          <button class="play" id="play" type="button" aria-label="再生">
+            <svg id="icon-play" viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg>
+            <svg id="icon-pause" viewBox="0 0 24 24" hidden><path d="M6 4h4.5v16H6zM13.5 4H18v16h-4.5z"/></svg>
+          </button>
+          <button class="ctrl" id="next" type="button" aria-label="次の曲"><svg viewBox="0 0 24 24"><path d="M15.5 5H18v14h-2.5zM4 5v14l10.5-7z"/></svg></button>
+          <div class="now"><span class="sec" id="now-sec"></span><span class="chord" id="now-chord"></span></div>
+          <span class="clock" id="clock"></span>
+        </div>
+        <div class="timeline" id="timeline"></div>
+        <div class="opts">
+          <button class="btn toggle" id="auto" type="button" aria-pressed="true">連続再生</button>
+          <a class="btn" id="download" download>ダウンロード（MP3）</a>
+        </div>
+        <p class="hint">波形か区間を押すとそこから再生します。スペースで再生／一時停止、← → で5秒戻る／進む、N / P で次／前の曲。</p>
+        <p class="err" id="err" hidden></p>
+        <audio id="audio" preload="metadata"></audio>
+      </section>
+
+      <section class="block">
+        <h3>この曲に入れたもの</h3>
+        <div class="rows" id="why"></div>
+      </section>
+      <section class="block">
+        <h3>コード譜</h3>
+        <div class="chart-sheet"><table class="sheet" id="sheet"></table></div>
+      </section>
+      <footer>
+        <p>既存曲のメロディやフレーズは使っていません。解説の時間は全期間の再生時間です。No.01〜09 は Tone.js で合成した音を録音したものです。生楽器の録音サンプルは tonejs-instruments（Nicholaus P. Brosowsky、CC BY 3.0）、ドラムの一部は TR-808 の実機録音（Michael Fischer）です。スマホで音が出ない場合は、マナーモード（消音スイッチ）を解除してください。</p>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script>
+/*__TRACKS__*/
+(() => {
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = s => { s = Math.max(0, s || 0); return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`; };
+const audio = $("audio");
+let cur = null, auto = true, lastKey = "";
+
+// ---------- track list ----------
+$("count").textContent = `${TRACKS.length}曲`;
+TRACKS.forEach(s => {
+  const li = document.createElement("li");
+  li.innerHTML = `<button class="track" type="button" id="track-${s.id}" style="--tc:${s.accent.light}">
+    <span class="no">${String(s.no).padStart(2, "0")}</span>
+    <span class="t">${esc(s.title)}</span>
+    <span class="len">${fmt(s.duration)}</span>
+    <span class="g"><span class="dot"></span>${esc(s.genre)}</span>
+  </button>`;
+  li.firstElementChild.addEventListener("click", () => select(s.id, true));
+  $("tracks").appendChild(li);
+});
+const dark = () => document.documentElement.dataset.theme === "dark" || (document.documentElement.dataset.theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+function trackColors() { TRACKS.forEach(s => $("track-" + s.id).style.setProperty("--tc", dark() ? s.accent.dark : s.accent.light)); drawWave(); }
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", trackColors); } catch {}
+new MutationObserver(trackColors).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+// ---------- select a song ----------
+function select(id, play) {
+  const s = TRACKS.find(t => t.id === id) || TRACKS[TRACKS.length - 1];
+  if (cur === s) { if (play) audio.play().catch(showErr); return; }
+  cur = s;
+  try { if (location.hash !== "#" + s.id) history.replaceState(null, "", "#" + s.id); } catch {}
+  const root = document.documentElement.style;
+  root.setProperty("--acc-l", s.accent.light); root.setProperty("--acc-d", s.accent.dark);
+  TRACKS.forEach(t => $("track-" + t.id).setAttribute("aria-current", String(t === s)));
+  $("eyebrow").textContent = `No.${String(s.no).padStart(2, "0")} · ${s.genre} · ${s.date}`;
+  $("title").textContent = s.title;
+  $("meta").innerHTML = [`${s.bpm} BPM`, s.key, s.meter || "4/4", fmt(s.duration), "インスト"].map(x => `<span>${esc(x)}</span>`).join("");
+  $("blurb").textContent = s.blurb;
+  document.title = `${s.title} — 履歴盤`;
+  const tl = $("timeline"); tl.innerHTML = "";
+  s.sections.forEach((sec, i) => {
+    const b = document.createElement("button");
+    b.className = "seg"; b.type = "button"; b.id = "seg-" + i;
+    b.style.flex = `${sec.end - sec.start} 1 0`; b.style.setProperty("--o", sec.o ?? 0.5);
+    b.innerHTML = `<div class="fill"></div><span>${esc(sec.name)}</span>`;
+    b.title = `${sec.name}（${fmt(sec.start)}〜）`;
+    b.addEventListener("click", () => seek(sec.start + 0.001, true));
+    tl.appendChild(b);
+  });
+  $("why").innerHTML = s.why.map(([w, sub, how, src]) => `<div class="row">
+    <div class="what">${esc(w)}<small>${esc(sub)}</small></div>
+    <div class="how">${esc(how)}</div>
+    <div class="src">${src.map(([n, h]) => `<span class="tag">${esc(n)}${h != null ? `<b>${h}h</b>` : ""}</span>`).join("")}</div>
+  </div>`).join("");
+  $("sheet").innerHTML = s.sheet.map(({ name, syms }) => {
+    const lines = []; for (let i = 0; i < syms.length; i += 8) lines.push(syms.slice(i, i + 8));
+    return lines.map((r, ri) => `<tr><th>${ri === 0 ? esc(name) : ""}</th>${r.map(c => `<td>${esc(c)}</td>`).join("")}${"<td></td>".repeat(8 - r.length)}</tr>`).join("");
+  }).join("");
+  const dl = $("download"); dl.href = s.src; dl.setAttribute("download", `履歴盤 ${String(s.no).padStart(2, "0")} ${s.title}.mp3`);
+  $("err").hidden = true;
+  audio.src = s.src;
+  audio.load();
+  setMedia();
+  lastKey = ""; update(true); drawWave();
+  if (play) audio.play().catch(showErr);
+}
+function showErr(e) { if (e && e.name === "AbortError") return; const el = $("err"); el.hidden = false; el.textContent = "再生できませんでした（" + (e && e.message || e) + "）。もう一度押してください。"; }
+function seek(t, play) { if (!cur) return; audio.currentTime = Math.max(0, Math.min(cur.duration - 0.05, t)); if (play && audio.paused) audio.play().catch(showErr); lastKey = ""; update(true); }
+function step(d) { const i = TRACKS.indexOf(cur); const n = TRACKS[(i + d + TRACKS.length) % TRACKS.length]; select(n.id, !audio.paused || d !== 0); }
+
+// ---------- controls ----------
+$("play").addEventListener("click", () => { if (audio.paused) audio.play().catch(showErr); else audio.pause(); });
+$("prev").addEventListener("click", () => { if (audio.currentTime > 3) seek(0, false); else step(-1); });
+$("next").addEventListener("click", () => step(1));
+$("auto").addEventListener("click", e => { auto = !auto; e.currentTarget.setAttribute("aria-pressed", String(auto)); });
+audio.addEventListener("ended", () => { const i = TRACKS.indexOf(cur); if (auto && i < TRACKS.length - 1) select(TRACKS[i + 1].id, true); else { setPlaying(false); } });
+audio.addEventListener("play", () => setPlaying(true));
+audio.addEventListener("pause", () => setPlaying(false));
+audio.addEventListener("waiting", () => { $("now-sec").textContent = "読み込み中…"; });
+audio.addEventListener("error", () => showErr(audio.error ? "音声ファイルを読み込めません" : ""));
+addEventListener("keydown", e => {
+  if (e.target.closest("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.code === "Space") { e.preventDefault(); $("play").click(); }
+  else if (e.key === "ArrowLeft") { e.preventDefault(); seek(audio.currentTime - 5); }
+  else if (e.key === "ArrowRight") { e.preventDefault(); seek(audio.currentTime + 5); }
+  else if (e.key === "n" || e.key === "N") step(1);
+  else if (e.key === "p" || e.key === "P") step(-1);
+});
+function setPlaying(p) {
+  $("icon-play").toggleAttribute("hidden", p); $("icon-pause").toggleAttribute("hidden", !p); $("play").setAttribute("aria-label", p ? "一時停止" : "再生");
+  TRACKS.forEach(s => $("track-" + s.id).classList.toggle("playing", p && s === cur));
+  if ("mediaSession" in navigator) navigator.mediaSession.playbackState = p ? "playing" : "paused";
+}
+
+// ---------- lock screen / headphone controls ----------
+function setMedia() {
+  if (!("mediaSession" in navigator) || !cur) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({ title: cur.title, artist: "履歴盤", album: `No.${String(cur.no).padStart(2, "0")} · ${cur.genre}` });
+    const h = (a, f) => { try { navigator.mediaSession.setActionHandler(a, f); } catch {} };
+    h("play", () => audio.play().catch(showErr)); h("pause", () => audio.pause());
+    h("previoustrack", () => step(-1)); h("nexttrack", () => step(1));
+    h("seekbackward", d => seek(audio.currentTime - (d.seekOffset || 10))); h("seekforward", d => seek(audio.currentTime + (d.seekOffset || 10)));
+    h("seekto", d => seek(d.seekTime));
+  } catch {}
+}
+function mediaPos() { try { if ("mediaSession" in navigator && cur && isFinite(audio.duration)) navigator.mediaSession.setPositionState({ duration: audio.duration, position: Math.min(audio.currentTime, audio.duration), playbackRate: 1 }); } catch {} }
+audio.addEventListener("loadedmetadata", mediaPos); audio.addEventListener("seeked", mediaPos); audio.addEventListener("play", mediaPos);
+
+// ---------- waveform ----------
+const wave = $("wave"), cv = $("wave-cv"), cx = cv.getContext("2d");
+function drawWave() {
+  if (!cur) return;
+  const r = cv.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+  cv.width = Math.max(1, Math.round(r.width * dpr)); cv.height = Math.max(1, Math.round(r.height * dpr));
+  const w = cv.width, h = cv.height, p = cur.peaks, n = p.length, bw = w / n;
+  const acc = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#d98a1e";
+  const played = audio.currentTime / cur.duration;
+  cx.clearRect(0, 0, w, h);
+  for (let i = 0; i < n; i++) {
+    const x = i * bw, bh = Math.max(1, p[i] * (h - 8));
+    cx.fillStyle = i / n < played ? acc : "rgba(255,255,255,.28)";
+    cx.fillRect(x, (h - bh) / 2, Math.max(1, bw - 0.5 * dpr), bh);
+  }
+  cx.fillStyle = "rgba(255,255,255,.45)";
+  cur.sections.forEach(sec => { if (sec.start > 0) cx.fillRect(Math.round(sec.start / cur.duration * w), 0, dpr, h); });
+}
+addEventListener("resize", drawWave);
+const posAt = e => { const r = wave.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * cur.duration; };
+let dragging = false;
+wave.addEventListener("pointerdown", e => { dragging = true; wave.setPointerCapture(e.pointerId); seek(posAt(e), false); });
+wave.addEventListener("pointermove", e => { const hv = $("wave-hover"); hv.hidden = false; hv.textContent = fmt(posAt(e)); hv.style.left = (e.clientX - wave.getBoundingClientRect().left) + "px"; if (dragging) seek(posAt(e), false); });
+wave.addEventListener("pointerup", () => { dragging = false; });
+wave.addEventListener("pointerleave", () => { $("wave-hover").hidden = true; });
+wave.addEventListener("keydown", e => { if (e.key === "Home") seek(0); if (e.key === "End") seek(cur.duration - 1); });
+
+// ---------- follow the playhead ----------
+function update(force) {
+  if (!cur) return;
+  const t = audio.currentTime || 0;
+  const si = Math.max(0, cur.sections.findIndex((s, i) => t >= s.start && (t < s.end || i === cur.sections.length - 1)));
+  let bi = 0; for (let i = 0; i < cur.bars.length; i++) if (cur.bars[i][0] <= t) bi = i; else break;
+  const bar = cur.bars[bi], sec = cur.sections[si];
+  const key = cur.id + ":" + si + ":" + bi + ":" + Math.floor(t);
+  if (key !== lastKey || force) {
+    lastKey = key;
+    if (!audio.seeking) $("now-sec").textContent = `${sec.name} · ${bi - cur.bars.findIndex(b => b[2] === si) + 1}小節目`;
+    $("now-chord").textContent = bar ? bar[1] : "";
+    $("clock").textContent = `${fmt(t)} / ${fmt(cur.duration)}`;
+    cur.sections.forEach((s, i) => {
+      const seg = $("seg-" + i); if (!seg) return;
+      seg.classList.toggle("cur", i === si);
+      const pr = i < si ? 1 : i > si ? 0 : (t - s.start) / (s.end - s.start);
+      seg.firstChild.style.width = (Math.min(1, Math.max(0, pr)) * 100).toFixed(1) + "%";
+    });
+    wave.setAttribute("aria-valuenow", Math.round(t)); wave.setAttribute("aria-valuemax", Math.round(cur.duration)); wave.setAttribute("aria-valuetext", `${fmt(t)} / ${fmt(cur.duration)}`);
+  }
+  drawWave();
+}
+audio.addEventListener("timeupdate", () => update(false));
+(function loop() { if (!audio.paused) update(false); requestAnimationFrame(loop); })();
+
+const initial = (location.hash || "").slice(1);
+select(TRACKS.some(s => s.id === initial) ? initial : TRACKS[TRACKS.length - 1].id, false);
+addEventListener("hashchange", () => { const id = location.hash.slice(1); if (TRACKS.some(s => s.id === id)) select(id, false); });
+trackColors();
+})();
+</script>
