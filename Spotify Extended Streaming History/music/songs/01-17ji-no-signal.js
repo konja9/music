@@ -370,15 +370,16 @@ SONGS.push({
         k(0); k(7, 0.55); k(10, 0.8); sn(4); sn(12); sn(9, 0.18); sn(15, 0.15);
         for (let s = 0; s < 16; s += 2) h(s, s % 4 === 0 ? 0.55 : 0.4);
         h(7, 0.2); h(13, 0.22);
-        if (id === "a2") for (let s = 1; s < 16; s += 2) h(s, 0.18);
+        if (id === "a2") for (let s = 1; s < 16; s += 2) if (s !== 7 && s !== 13) h(s, 0.18);   // 7 and 13 already have a hat (a second jittered hit could land first and throw)
         if (local % 4 === 3) oh(14, 0.55);
         if (local === 15 && id === "a") { sn(13, 0.5); sn(14, 0.7); sn(15, 0.85); }
       } else if (id === "b") {
         if (local === 0) crash();
         k(0); k(3, 0.7); k(11, 0.8); sn(8); sn(14, 0.2);
-        for (let s = 0; s < 16; s += 2) h(s, 0.45);
-        if (local % 2 === 1) { h(13, 0.3); h(15, 0.35); }
-        if (local === 7) { h(12, 0.3); h(13, 0.4); h(14, 0.5); h(15, 0.6); }
+        const fill = local === 7;
+        for (let s = 0; s < (fill ? 12 : 16); s += 2) h(s, 0.45);
+        if (local % 2 === 1 && !fill) { h(13, 0.3); h(15, 0.35); }
+        if (fill) { h(12, 0.3); h(13, 0.4); h(14, 0.5); h(15, 0.6); }
       } else if (id === "bridge") {
         if (local % 2 === 0) crash();
         k(0, 1); k(6, 0.8); k(8, 1); k(10, 0.6); sn(4, 1); sn(12, 1);

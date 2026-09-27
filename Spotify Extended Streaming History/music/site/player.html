@@ -45,7 +45,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .site-head p { margin: 0; color: var(--ink-2); max-width: 52ch; font-size: 14px; }
 
 .layout { display: grid; grid-template-columns: minmax(250px, 320px) minmax(0, 1fr); gap: 28px; align-items: start; }
-@media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } }
 
 .tracks { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
 @media (max-width: 860px) { .tracks { position: static; } }
@@ -60,7 +60,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .track .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--tc); display: inline-block; margin-right: 6px; vertical-align: 1px; }
 .track.playing .len::before { content: "♪ "; color: var(--tc); }
 
-.main { display: grid; gap: 28px; min-width: 0; }
+.main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; min-width: 0; }
 .hero { display: grid; gap: 8px; }
 .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; color: var(--ink-3); text-transform: uppercase; }
 .hero h2 { font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 8vw, 72px); line-height: 1.05; margin: 0; text-wrap: balance; }
@@ -338,6 +338,7 @@ function update(force) {
   drawWave();
 }
 audio.addEventListener("timeupdate", () => update(false));
+["seeked", "playing", "canplay"].forEach(ev => audio.addEventListener(ev, () => { lastKey = ""; update(true); }));   // replace "読み込み中…" once audio is ready
 (function loop() { if (!audio.paused) update(false); requestAnimationFrame(loop); })();
 
 const initial = (location.hash || "").slice(1);

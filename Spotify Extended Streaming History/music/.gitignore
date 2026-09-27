@@ -1,2 +1,4 @@
 dist/samples/
+dist/audio/
+dist/engine.html
 render/out/

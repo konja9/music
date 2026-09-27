@@ -1,5 +1,50 @@
 # 履歴盤 — Spotify の再生履歴から作ったオリジナル曲
 
+## 今の形式（No.10 から）
+
+曲は **Strudel**（TidalCycles の JavaScript 版）で書き、手元で音声に書き出して、サイトは **書き出した MP3 を再生するプレイヤー** として公開する。
+No.01〜09 は Tone.js で書いた曲を実時間で録音して MP3 にしたもの（下の「Tone.js の曲」は書き出し元として残している）。
+
+| パス | 役割 |
+|---|---|
+| `songs/NN-id.strudel.js` | Strudel の曲。`SONG({ ...メタ情報, code: \`Strudel のコード\` })`。1サイクル = 1小節。区間は `arrange()` で並べる |
+| `render/render-strudel.mjs` | Strudel の曲を Offline で書き出す（`render/out/` に PCM） |
+| `render/render-tone.mjs` | Tone.js の曲を実時間で再生して録音する（Offline では切り貼りが鳴らないため） |
+| `render/encode.mjs` | 曲の長さに切り、音量をそろえ（-16 dB 相当、ピーク -1 dBFS 以下）、MP3（192kbps）と波形データを `audio/` に作る |
+| `audio/NN-id.mp3`, `.peaks.json` | 公開する音声（コミットする） |
+| `site/player.html` | プレイヤー（波形・区間・コード表示・連続再生・ロック画面操作・ダウンロード） |
+| `build.mjs` | `dist/index.html`（プレイヤー）と `dist/engine.html`（Tone.js の書き出し用）を作る |
+
+### 新しい曲を作る手順
+
+1. `songs/NN-id.strudel.js` を書く（No.10 をひな形にする）。メタ情報の `sections`（小節数とコード）は、プレイヤーの区間表示とコード表示に使う
+2. 書き出す道具は手元の一時フォルダに入れる（リポジトリの依存にしない）
+   ```
+   mkdir -p /tmp/rireki && cd /tmp/rireki && npm init -y && npm i @strudel/web@1.3.0 @breezystack/lamejs@1.2.7
+   ```
+3. 書き出して MP3 にする（`music/` で実行）
+   ```
+   STRUDEL=/tmp/rireki/node_modules/@strudel/web/dist/index.mjs PLAYWRIGHT=$(npm root -g)/playwright node render/render-strudel.mjs <id>
+   LAMEJS=/tmp/rireki/node_modules/@breezystack/lamejs/dist/lamejs.js node render/encode.mjs <NN-id>
+   node build.mjs
+   ```
+   encode の出力で、長さ・音量・ピーク・音切れ（dropouts）を確認する
+4. `dist/index.html` と `dist/audio/` の新しい MP3 を公開する
+
+### Strudel で使えるサンプル名
+
+`samples/` の音をそのまま使える。mini-notation では `-` が休符になるため、名前から `-` を外している。
+- 音程つき: `piano` `harp` `xylophone` `guitarnylon` `guitarelectric` `basselectric` `cello` `contrabass` `organ` `flute` `saxophone` `trumpet` `trombone`（`note("c3").s("piano")`）
+- TR-808: `bdlong` `bdmid` `bdshort` `sdsnappy` `sdmid` `sdtone` `clap` `hh`（クローズ）`oh`（オープン）`cowbell` `rim` `clave` `maracas` `cymbal` `tomlow` `tommid` `tomhigh` `congalow` `congahigh`
+- 声: `vplay` `vskip` `vnext` `vshuffle` `vrepeat` `vpause` `vendoftrack` `vnosignal` `vseventeenhundred` `vhours1290` `vplays1143` `vskipped`
+- Strudel の合成音（`sine` `sawtooth` `square` `triangle`）も使える
+
+### 注意
+- 全体の音量は `.gain()` で控えめに。書き出しの時点で 1.0 を超えると割れたまま残る
+- Strudel（AGPL）と lamejs（LGPL）は書き出すときだけ使う。公開物は MP3 と自作のプレイヤーだけ
+
+## Tone.js の曲（No.01〜09、書き出し元）
+
 音はブラウザ内で Tone.js で鳴らします。ほとんどはシンセサイザーで、生楽器（ブラス、サックス、ギター、ベース）は `samples/` の録音サンプルを使えます（No.06 から）。
 
 公開サイト（非公開の Artifact）: https://claude.ai/artifact/5uTy27eZjMLx2i6Y1AehtP
@@ -56,11 +101,3 @@
 4. `site/template.html` は変えなくてよい。build すれば一覧に入る
 
 注意: `Tone.Transport` / `Tone.Draw` は使わず `Tone.getTransport()` / `Tone.getDraw()` を使う（曲を切り替えるたびに Tone の Context を作り直すため、古い方を指したままになる）。
-
-## 保留中: 書き出してプレイヤーで公開する形式（未使用）
-
-音声ファイルに書き出して公開する形式を試しかけたが、Suno で作る方針に変わったため保留にした。今のサイトと build には組み込んでいない。
-- `render/render-tone.mjs`: Tone.js の曲をヘッドレス Chromium で実時間再生して録音する（`render/out/` に PCM。git には入れない）
-- `render/encode.mjs`: 録音を曲の長さに切り、音量をそろえて MP3 と波形データ（`audio/`）にする
-- `site/player.html`: 書き出した MP3 を再生するプレイヤーの試作（`/*__TRACKS__*/` に曲情報を入れる想定）
-- `audio/05-zankyo.*`: 試しに書き出した No.05
